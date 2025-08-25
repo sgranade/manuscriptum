@@ -1,0 +1,49 @@
+{
+    "name": "manuscripten",
+    "version": "0.0.1",
+    "description": "Obsidian plugin to create .docx files that contain story and novel manuscripts for submission to magazines or agents.",
+    "license": "MIT",
+    "author": {
+        "name": "Stephen Granade",
+        "email": "stephen@granades.com",
+        "url": "https://github.com/sgranade"
+    },
+    "type": "module",
+    "main": "out/main.js",
+    "scripts": {
+        "lint": "eslint src/",
+        "build": "tsc",
+        "watch": "tsc --watch",
+        "start": "node .",
+        "test": "mocha"
+    },
+    "keywords": [
+        "obsidian",
+        "writing",
+        "manuscript"
+    ],
+    "devDependencies": {
+        "@eslint/js": "^9.34.0",
+        "@types/chai": "^5.2.2",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^24.3.0",
+        "@types/sinon": "^17.0.4",
+        "chai": "^6.0.1",
+        "eslint": "^9.34.0",
+        "mocha": "^11.7.1",
+        "prettier": "^3.6.2",
+        "sinon": "^21.0.0",
+        "tsx": "^4.20.5",
+        "type-fest": "^4.41.0",
+        "typescript": "^5.9.2",
+        "typescript-eslint": "^8.40.0"
+    },
+    "dependencies": {
+        "docx": "^9.5.1",
+        "mdast2docx": "^1.4.1",
+        "remark-gfm": "^4.0.1",
+        "remark-parse": "^11.0.0",
+        "tslib": "^2.8.1",
+        "unified": "^11.0.5"
+    }
+}

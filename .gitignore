@@ -1,0 +1,11 @@
+# Output and Node
+out
+dist
+node_modules
+.env
+*.docx
+
+# VSCode
+.vscode
+
+TODO.md
