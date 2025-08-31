@@ -1,3 +1,4 @@
+import { LineRuleType } from "docx";
 import { IPlugin } from "mdast2docx";
 
 /**
@@ -19,6 +20,27 @@ export const shunnThematicBreakPlugin: () => IPlugin = () => {
                     alignment: "center",
                 }),
             ];
+        },
+    };
+};
+
+/**
+ * mdast2docx plugin to add a first line indent and double-space paragraphs.
+ */
+export const doubleSpaceAndIndentParas: () => IPlugin = () => {
+    return {
+        block(docx, node, paraProps) {
+            if (node.type === "paragraph") {
+                paraProps.indent = {
+                    firstLine: 720,
+                };
+                paraProps.spacing = {
+                    line: 480, // Double spaced: AUTO line rule sets this to be units of 1/240th of the font size
+                    lineRule: LineRuleType.AUTO,
+                };
+            }
+
+            return [];
         },
     };
 };
