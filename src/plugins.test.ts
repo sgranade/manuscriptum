@@ -30,12 +30,11 @@ describe("Plugins", () => {
             const result = l[0];
 
             expect(l.length).to.equal(1);
-            expect(
-                mockParagraph.calledOnceWithExactly({
-                    text: "#",
-                    alignment: "center",
-                })
-            );
+            sinon.assert.calledOnceWithExactly(mockParagraph, {
+                text: "#",
+                alignment: "center",
+                spacing: { before: 0 },
+            });
         });
     });
 

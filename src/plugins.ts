@@ -18,6 +18,7 @@ export const shunnThematicBreakPlugin: () => IPlugin = () => {
                 new docx.Paragraph({
                     text: "#",
                     alignment: "center",
+                    spacing: { before: 0 },
                 }),
             ];
         },
