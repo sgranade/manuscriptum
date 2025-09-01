@@ -37,6 +37,7 @@ export const doubleSpaceAndIndentParas: () => IPlugin = () => {
                     firstLine: 720,
                 };
                 paraProps.spacing = {
+                    before: 0,
                     line: 480, // Double spaced: AUTO line rule sets this to be units of 1/240th of the font size
                     lineRule: LineRuleType.AUTO,
                 };

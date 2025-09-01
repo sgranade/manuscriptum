@@ -84,197 +84,198 @@ describe("Plugins", () => {
             );
 
             expect(result.spacing).to.eql({
+                before: 0,
                 line: 480,
                 lineRule: docx.LineRuleType.AUTO,
             });
         });
     });
-});
 
-describe("Front Matter", () => {
-    it("should add a table with author information to the story", () => {
-        const { docxMock } = createDocxModuleMock({
-            TextRun: docx.TextRun,
-            Paragraph: docx.Paragraph,
-            Table: docx.Table,
-            TableRow: docx.TableRow,
-            TableCell: docx.TableCell,
+    describe("Front Matter", () => {
+        it("should add a table with author information to the story", () => {
+            const { docxMock } = createDocxModuleMock({
+                TextRun: docx.TextRun,
+                Paragraph: docx.Paragraph,
+                Table: docx.Table,
+                TableRow: docx.TableRow,
+                TableCell: docx.TableCell,
+            });
+
+            const sections = [{ children: [] }];
+            const plugin = uut.addFrontMatterPlugin(
+                "Story Title",
+                "About 700 words",
+                "Author",
+                "Author\nemail@gmail.com",
+                docxMock as unknown as typeof docx
+            );
+            if (plugin.postprocess === undefined)
+                throw new Error("Missing postprocess() method");
+
+            plugin.postprocess(sections);
+            const row = (sections[0].children[0] as any).__ctorArgs[0].rows[0];
+            const leftCell = row.__ctorArgs[0].children[0];
+            const leftCellContents = leftCell.__ctorArgs[0].children[0];
+            const result = leftCellContents.__ctorArgs[0].children; // Collection of TextRuns
+
+            expect(result.length).to.equal(2);
+            expect(result[0].__ctorArgs[0]).to.eql("Author");
+            expect(result[1].__ctorArgs[0]).to.eql({
+                text: "email@gmail.com",
+                break: 1,
+            });
         });
 
-        const sections = [{ children: [] }];
-        const plugin = uut.addFrontMatterPlugin(
-            "Story Title",
-            "About 700 words",
-            "Author",
-            "Author\nemail@gmail.com",
-            docxMock as unknown as typeof docx
-        );
-        if (plugin.postprocess === undefined)
-            throw new Error("Missing postprocess() method");
+        it("should add a table with skipped author information to the story when there is no info passed to the plugin", () => {
+            const { docxMock } = createDocxModuleMock({
+                TextRun: docx.TextRun,
+                Paragraph: docx.Paragraph,
+                Table: docx.Table,
+                TableRow: docx.TableRow,
+                TableCell: docx.TableCell,
+            });
 
-        plugin.postprocess(sections);
-        const row = (sections[0].children[0] as any).__ctorArgs[0].rows[0];
-        const leftCell = row.__ctorArgs[0].children[0];
-        const leftCellContents = leftCell.__ctorArgs[0].children[0];
-        const result = leftCellContents.__ctorArgs[0].children; // Collection of TextRuns
+            const sections = [{ children: [] }];
+            const plugin = uut.addFrontMatterPlugin(
+                "Story Title",
+                "About 700 words",
+                "Author",
+                undefined,
+                docxMock as unknown as typeof docx
+            );
+            if (plugin.postprocess === undefined)
+                throw new Error("Missing postprocess() method");
 
-        expect(result.length).to.equal(2);
-        expect(result[0].__ctorArgs[0]).to.eql("Author");
-        expect(result[1].__ctorArgs[0]).to.eql({
-            text: "email@gmail.com",
-            break: 1,
-        });
-    });
+            plugin.postprocess(sections);
+            const row = (sections[0].children[0] as any).__ctorArgs[0].rows[0];
+            const leftCell = row.__ctorArgs[0].children[0];
+            const leftCellContents = leftCell.__ctorArgs[0].children[0];
+            const result = leftCellContents.__ctorArgs[0].children;
 
-    it("should add a table with skipped author information to the story when there is no info passed to the plugin", () => {
-        const { docxMock } = createDocxModuleMock({
-            TextRun: docx.TextRun,
-            Paragraph: docx.Paragraph,
-            Table: docx.Table,
-            TableRow: docx.TableRow,
-            TableCell: docx.TableCell,
+            expect(result).to.be.undefined;
         });
 
-        const sections = [{ children: [] }];
-        const plugin = uut.addFrontMatterPlugin(
-            "Story Title",
-            "About 700 words",
-            "Author",
-            undefined,
-            docxMock as unknown as typeof docx
-        );
-        if (plugin.postprocess === undefined)
-            throw new Error("Missing postprocess() method");
+        it("should add a table with word count information to the story", () => {
+            const { docxMock } = createDocxModuleMock({
+                TextRun: docx.TextRun,
+                Paragraph: docx.Paragraph,
+                Table: docx.Table,
+                TableRow: docx.TableRow,
+                TableCell: docx.TableCell,
+            });
 
-        plugin.postprocess(sections);
-        const row = (sections[0].children[0] as any).__ctorArgs[0].rows[0];
-        const leftCell = row.__ctorArgs[0].children[0];
-        const leftCellContents = leftCell.__ctorArgs[0].children[0];
-        const result = leftCellContents.__ctorArgs[0].children;
+            const sections = [{ children: [] }];
+            const plugin = uut.addFrontMatterPlugin(
+                "Story Title",
+                "About 700 words",
+                "Author",
+                "Author\nemail@gmail.com",
+                docxMock as unknown as typeof docx
+            );
+            if (plugin.postprocess === undefined)
+                throw new Error("Missing postprocess() method");
 
-        expect(result).to.be.undefined;
-    });
+            plugin.postprocess(sections);
+            const row = (sections[0].children[0] as any).__ctorArgs[0].rows[0];
+            const rightCell = row.__ctorArgs[0].children[1];
+            const result = rightCell.__ctorArgs[0].children;
 
-    it("should add a table with word count information to the story", () => {
-        const { docxMock } = createDocxModuleMock({
-            TextRun: docx.TextRun,
-            Paragraph: docx.Paragraph,
-            Table: docx.Table,
-            TableRow: docx.TableRow,
-            TableCell: docx.TableCell,
+            expect(result.length).to.equal(1);
+            expect(result[0].__ctorArgs[0].text).to.eql("About 700 words");
         });
 
-        const sections = [{ children: [] }];
-        const plugin = uut.addFrontMatterPlugin(
-            "Story Title",
-            "About 700 words",
-            "Author",
-            "Author\nemail@gmail.com",
-            docxMock as unknown as typeof docx
-        );
-        if (plugin.postprocess === undefined)
-            throw new Error("Missing postprocess() method");
+        it("should add title and author to the end of the section", () => {
+            const { docxMock } = createDocxModuleMock({
+                TextRun: docx.TextRun,
+                Paragraph: docx.Paragraph,
+                Table: docx.Table,
+                TableRow: docx.TableRow,
+                TableCell: docx.TableCell,
+            });
 
-        plugin.postprocess(sections);
-        const row = (sections[0].children[0] as any).__ctorArgs[0].rows[0];
-        const rightCell = row.__ctorArgs[0].children[1];
-        const result = rightCell.__ctorArgs[0].children;
+            const sections = [{ children: [] }];
+            const plugin = uut.addFrontMatterPlugin(
+                "Story Title",
+                "About 700 words",
+                "Authorr",
+                "Author\nemail@gmail.com",
+                docxMock as unknown as typeof docx
+            );
+            if (plugin.postprocess === undefined)
+                throw new Error("Missing postprocess() method");
 
-        expect(result.length).to.equal(1);
-        expect(result[0].__ctorArgs[0].text).to.eql("About 700 words");
-    });
+            plugin.postprocess(sections);
+            const result = sections[0].children as any[];
 
-    it("should add title and author to the end of the section", () => {
-        const { docxMock } = createDocxModuleMock({
-            TextRun: docx.TextRun,
-            Paragraph: docx.Paragraph,
-            Table: docx.Table,
-            TableRow: docx.TableRow,
-            TableCell: docx.TableCell,
+            expect(result.length).to.equal(13);
+            expect(result[11].__ctorArgs[0].text).to.equal("Story Title");
+            expect(result[12].__ctorArgs[0].text).to.equal("by Authorr");
         });
 
-        const sections = [{ children: [] }];
-        const plugin = uut.addFrontMatterPlugin(
-            "Story Title",
-            "About 700 words",
-            "Authorr",
-            "Author\nemail@gmail.com",
-            docxMock as unknown as typeof docx
-        );
-        if (plugin.postprocess === undefined)
-            throw new Error("Missing postprocess() method");
+        it("should center title and author at the end of the section", () => {
+            const { docxMock } = createDocxModuleMock({
+                TextRun: docx.TextRun,
+                Paragraph: docx.Paragraph,
+                Table: docx.Table,
+                TableRow: docx.TableRow,
+                TableCell: docx.TableCell,
+            });
 
-        plugin.postprocess(sections);
-        const result = sections[0].children as any[];
+            const sections = [{ children: [] }];
+            const plugin = uut.addFrontMatterPlugin(
+                "Story Title",
+                "About 700 words",
+                "Authorr",
+                "Author\nemail@gmail.com",
+                docxMock as unknown as typeof docx
+            );
+            if (plugin.postprocess === undefined)
+                throw new Error("Missing postprocess() method");
 
-        expect(result.length).to.equal(13);
-        expect(result[11].__ctorArgs[0].text).to.equal("Story Title");
-        expect(result[12].__ctorArgs[0].text).to.equal("by Authorr");
-    });
+            plugin.postprocess(sections);
+            const result = sections[0].children as any[];
 
-    it("should center title and author at the end of the section", () => {
-        const { docxMock } = createDocxModuleMock({
-            TextRun: docx.TextRun,
-            Paragraph: docx.Paragraph,
-            Table: docx.Table,
-            TableRow: docx.TableRow,
-            TableCell: docx.TableCell,
+            expect(result.length).to.equal(13);
+            expect(result[11].__ctorArgs[0].alignment).to.equal("center");
+            expect(result[12].__ctorArgs[0].alignment).to.equal("center");
         });
 
-        const sections = [{ children: [] }];
-        const plugin = uut.addFrontMatterPlugin(
-            "Story Title",
-            "About 700 words",
-            "Authorr",
-            "Author\nemail@gmail.com",
-            docxMock as unknown as typeof docx
-        );
-        if (plugin.postprocess === undefined)
-            throw new Error("Missing postprocess() method");
+        it("should double-space title and author at the end of the section", () => {
+            const { docxMock } = createDocxModuleMock({
+                TextRun: docx.TextRun,
+                Paragraph: docx.Paragraph,
+                Table: docx.Table,
+                TableRow: docx.TableRow,
+                TableCell: docx.TableCell,
+            });
 
-        plugin.postprocess(sections);
-        const result = sections[0].children as any[];
+            const sections = [{ children: [] }];
+            const plugin = uut.addFrontMatterPlugin(
+                "Story Title",
+                "About 700 words",
+                "Authorr",
+                "Author\nemail@gmail.com",
+                docxMock as unknown as typeof docx
+            );
+            if (plugin.postprocess === undefined)
+                throw new Error("Missing postprocess() method");
 
-        expect(result.length).to.equal(13);
-        expect(result[11].__ctorArgs[0].alignment).to.equal("center");
-        expect(result[12].__ctorArgs[0].alignment).to.equal("center");
-    });
+            plugin.postprocess(sections);
+            const result = sections[0].children as any[];
 
-    it("should double-space title and author at the end of the section", () => {
-        const { docxMock } = createDocxModuleMock({
-            TextRun: docx.TextRun,
-            Paragraph: docx.Paragraph,
-            Table: docx.Table,
-            TableRow: docx.TableRow,
-            TableCell: docx.TableCell,
-        });
-
-        const sections = [{ children: [] }];
-        const plugin = uut.addFrontMatterPlugin(
-            "Story Title",
-            "About 700 words",
-            "Authorr",
-            "Author\nemail@gmail.com",
-            docxMock as unknown as typeof docx
-        );
-        if (plugin.postprocess === undefined)
-            throw new Error("Missing postprocess() method");
-
-        plugin.postprocess(sections);
-        const result = sections[0].children as any[];
-
-        expect(result.length).to.equal(13);
-        expect(result[11].__ctorArgs[0].spacing).to.eql({
-            before: 0,
-            after: 0,
-            line: 480,
-            lineRule: docx.LineRuleType.AUTO,
-        });
-        expect(result[12].__ctorArgs[0].spacing).to.eql({
-            before: 0,
-            after: 0,
-            line: 480,
-            lineRule: docx.LineRuleType.AUTO,
+            expect(result.length).to.equal(13);
+            expect(result[11].__ctorArgs[0].spacing).to.eql({
+                before: 0,
+                after: 0,
+                line: 480,
+                lineRule: docx.LineRuleType.AUTO,
+            });
+            expect(result[12].__ctorArgs[0].spacing).to.eql({
+                before: 0,
+                after: 0,
+                line: 480,
+                lineRule: docx.LineRuleType.AUTO,
+            });
         });
     });
 });
