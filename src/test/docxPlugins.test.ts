@@ -6,7 +6,7 @@ import { Paragraph, ThematicBreak } from "mdast";
 import { MutableParaOptions } from "mdast2docx/utils";
 import { createDocxModuleMock } from "./mockDocx";
 
-import * as uut from "../plugins";
+import * as uut from "../docxPlugins";
 
 describe("Plugins", () => {
     describe("Thematic Break", () => {
