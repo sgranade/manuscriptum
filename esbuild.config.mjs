@@ -56,7 +56,7 @@ const ctx = await esbuild.context({
         js: banner,
     },
     entryPoints: ["src/main.ts"],
-    // external: ["obsidian", "electron"],
+    external: ["obsidian", "electron"],
     format: "cjs",
     target: "es2020",
     platform: "node",
