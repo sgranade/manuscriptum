@@ -8,12 +8,13 @@
         "email": "stephen@granades.com",
         "url": "https://github.com/sgranade"
     },
-    "type": "module",
     "main": "out/main.js",
     "scripts": {
-        "lint": "eslint src/",
-        "build": "tsc",
-        "watch": "tsc --watch",
+        "compile": "npm-run-all check-types esbuild",
+        "check-types": "tsc -b --noEmit",
+        "esbuild": "node esbuild.config.mjs",
+        "watch": "node esbuild.config.mjs --watch",
+        "lint": "eslint ./src",
         "start": "node .",
         "test": "mocha"
     },
@@ -27,7 +28,6 @@
         "@types/chai": "^5.2.2",
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.3.0",
-        "@types/sinon": "^17.0.4",
         "chai": "^6.0.1",
         "esbuild": "0.25.9",
         "eslint": "^9.34.0",
