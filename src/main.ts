@@ -38,6 +38,36 @@ const DEFAULT_SETTINGS: Partial<ManuscriptenSettings> = {
     outputDir: downloadsFolder(),
 };
 
+/**
+ * Manuscript file's metadata.
+ */
+interface ManuscriptMetadata {
+    /**
+     * Title of the story.
+     */
+    title: string;
+    /**
+     * Output filename to save the manuscript to.
+     */
+    filename: string;
+    /**
+     * Output directory to save the manuscript to.
+     */
+    outputDir: string;
+    /**
+     * Story author, or undefined to anonymize the MS.
+     */
+    author?: string;
+    /**
+     * Story author's surname, or undefined to anonymize.
+     */
+    surname?: string;
+    /**
+     * Author's contact information, or undefined to anonymize.
+     */
+    contactInformation?: string;
+}
+
 export default class ManuscriptenPlugin extends Plugin {
     settings: ManuscriptenSettings;
 
@@ -135,19 +165,14 @@ export default class ManuscriptenPlugin extends Plugin {
             .use(remarkGfm)
             .use(remarkFrontmatter);
 
-        // TODO allow front matter/properties to override this.
-        let authorName: string | undefined = this.settings.authorName;
-        const authorSurname = this.settings.authorSurname;
-        let authorContactInformation: string | undefined =
-            this.settings.authorContactInformation;
-        const storyTitle = folder.name;
-        const outDir = this.settings.outputDir;
-
-        if (authorName.trim() === "") authorName = undefined;
-        if (authorContactInformation.trim() === "")
-            authorContactInformation = undefined;
-
-        const outFilename = folderNameToDocxOutfileName(folder.name);
+        const metadata: ManuscriptMetadata = {
+            title: folder.name,
+            filename: folderNameToDocxOutfileName(folder.name),
+            outputDir: this.settings.outputDir.trim(),
+            author: this.settings.authorName.trim(),
+            surname: this.settings.authorSurname.trim(),
+            contactInformation: this.settings.authorContactInformation.trim(),
+        };
 
         const notes = folder.children.filter(
             (f) => f instanceof TFile && f.extension === "md"
@@ -156,7 +181,49 @@ export default class ManuscriptenPlugin extends Plugin {
 
         let tree;
         for (const note of notes) {
-            const content = await this.app.vault.read(note);
+            // Check if the note has properties that overwrite the global settings
+            const frontmatter =
+                this.app.metadataCache.getFileCache(note)?.frontmatter;
+            if (frontmatter !== null && frontmatter !== undefined) {
+                if (frontmatter.title !== undefined) {
+                    metadata.title = frontmatter.title.trim();
+                }
+                if (frontmatter.filename !== undefined) {
+                    metadata.filename = frontmatter.filename;
+                }
+                if (frontmatter.outdir !== undefined) {
+                    if (fs.existsSync(frontmatter.outdir)) {
+                        metadata.outputDir = frontmatter.outdir;
+                    } else {
+                        new Notice(
+                            `outdir property on note ${note.name} has a non-existent directory: ` +
+                                `${frontmatter.outdir}. Using default output directory: ${metadata.outputDir}`
+                        );
+                    }
+                }
+                if (frontmatter.author !== undefined) {
+                    metadata.author = frontmatter.author.trim();
+                }
+                if (frontmatter.surname !== undefined) {
+                    metadata.surname = frontmatter.surname.trim();
+                }
+                if (frontmatter.contact !== undefined) {
+                    metadata.contactInformation = frontmatter.contact.trim();
+                }
+            }
+
+            if (metadata.author === "") {
+                metadata.author = undefined;
+            }
+            if (metadata.surname === "") {
+                metadata.surname = undefined;
+            }
+            if (metadata.contactInformation === "") {
+                metadata.contactInformation = undefined;
+            }
+
+            // Turn markdown content into an AST
+            const content = await this.app.vault.cachedRead(note);
             // TODO ADD WORDCOUNT!
             const subTree = pipeline.parse(content);
             subTree.children = subTree.children.filter(
@@ -179,19 +246,13 @@ export default class ManuscriptenPlugin extends Plugin {
             return;
         }
 
-        const docxArrayBuffer = await this.storyMdToDocx(
-            tree,
-            storyTitle,
-            authorName,
-            authorSurname,
-            authorContactInformation
-        );
+        const docxArrayBuffer = await this.storyMdToDocx(tree, metadata);
 
-        const outFullPath = path.join(outDir, outFilename);
+        const outFullPath = path.join(metadata.outputDir, metadata.filename);
         if (fs.existsSync(outFullPath)) {
             new ConfirmModal(
                 this.app,
-                `Manuscript file "${outFilename}" already exists. Overwrite?`,
+                `Manuscript file "${metadata.filename}" already exists.`,
                 () => {
                     this.writeDocxFile(outFullPath, docxArrayBuffer);
                 },
@@ -206,21 +267,12 @@ export default class ManuscriptenPlugin extends Plugin {
     /**
      * Turn a story's Markdown into the contents of a docx file.
      * @param tree Markdown abstract syntax tree for the story.
-     * @param storyTitle Title of the story.
-     * @param authorName Author name, or undefined to leave off.
-     * @param authorSurname Author surname, or undefined to leave off.
-     * @param authorContactInformation Author contact information, or undefined to leave off.
+     * @param metadata Manuscript metadata.
      * @returns Docx content.
      */
-    private async storyMdToDocx(
-        tree: Root,
-        storyTitle: string,
-        authorName: string | undefined,
-        authorSurname: string | undefined,
-        authorContactInformation: string | undefined
-    ) {
+    private async storyMdToDocx(tree: Root, metadata: ManuscriptMetadata) {
         const docProps: IDocxProps = {
-            title: storyTitle,
+            title: metadata.title,
         };
         const sectionProps: ISectionProps = {
             properties: {
@@ -245,7 +297,9 @@ export default class ManuscriptenPlugin extends Plugin {
                             children: [
                                 new docx.TextRun({
                                     children: [
-                                        `${authorSurname} / ${storyTitle} / `,
+                                        metadata.surname !== undefined
+                                            ? `${metadata.surname} / `
+                                            : "" + `${metadata.title} / `,
                                         docx.PageNumber.CURRENT,
                                     ],
                                 }),
@@ -259,10 +313,10 @@ export default class ManuscriptenPlugin extends Plugin {
                 shunnThematicBreakPlugin(),
                 doubleSpaceAndIndentParas(),
                 addFrontMatterPlugin(
-                    storyTitle,
+                    metadata.title,
                     "About 870 words",
-                    authorName,
-                    authorContactInformation
+                    metadata.author,
+                    metadata.contactInformation
                 ),
             ],
         };
@@ -282,8 +336,12 @@ export default class ManuscriptenPlugin extends Plugin {
      * @param content Docx file contents.
      */
     private writeDocxFile(outPath: string, content: ArrayBuffer) {
+        try {
         fs.writeFileSync(outPath, Buffer.from(content));
         new Notice(`Manuscript saved as ${path.basename(outPath)}`);
+        } catch (e) {
+            new Notice(`Failed to write manuscript: ${e}`);
+        }
     }
 }
 
