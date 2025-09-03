@@ -184,7 +184,7 @@ describe("Plugins", () => {
             expect(result[0].__ctorArgs[0].text).to.eql("About 700 words");
         });
 
-        it("should add title and author to the end of the section", () => {
+        it("should add title and author", () => {
             const { docxMock } = createDocxModuleMock({
                 TextRun: docx.TextRun,
                 Paragraph: docx.Paragraph,
@@ -207,12 +207,12 @@ describe("Plugins", () => {
             plugin.postprocess(sections);
             const result = sections[0].children as any[];
 
-            expect(result.length).to.equal(13);
+            expect(result.length).to.equal(14); // ends with title, author, blank para
             expect(result[11].__ctorArgs[0].text).to.equal("Story Title");
             expect(result[12].__ctorArgs[0].text).to.equal("by Authorr");
         });
 
-        it("should center title and author at the end of the section", () => {
+        it("should center title and author", () => {
             const { docxMock } = createDocxModuleMock({
                 TextRun: docx.TextRun,
                 Paragraph: docx.Paragraph,
@@ -235,7 +235,6 @@ describe("Plugins", () => {
             plugin.postprocess(sections);
             const result = sections[0].children as any[];
 
-            expect(result.length).to.equal(13);
             expect(result[11].__ctorArgs[0].alignment).to.equal("center");
             expect(result[12].__ctorArgs[0].alignment).to.equal("center");
         });
@@ -263,7 +262,6 @@ describe("Plugins", () => {
             plugin.postprocess(sections);
             const result = sections[0].children as any[];
 
-            expect(result.length).to.equal(13);
             expect(result[11].__ctorArgs[0].spacing).to.eql({
                 before: 0,
                 after: 0,
@@ -271,6 +269,39 @@ describe("Plugins", () => {
                 lineRule: docx.LineRuleType.AUTO,
             });
             expect(result[12].__ctorArgs[0].spacing).to.eql({
+                before: 0,
+                after: 0,
+                line: 480,
+                lineRule: docx.LineRuleType.AUTO,
+            });
+        });
+
+        it("should include a blank double-space paragraph after title and author at the end of the front matter", () => {
+            const { docxMock } = createDocxModuleMock({
+                TextRun: docx.TextRun,
+                Paragraph: docx.Paragraph,
+                Table: docx.Table,
+                TableRow: docx.TableRow,
+                TableCell: docx.TableCell,
+            });
+
+            const sections = [{ children: [] }];
+            const plugin = uut.addFrontMatterPlugin(
+                "Story Title",
+                "About 700 words",
+                "Authorr",
+                "Author\nemail@gmail.com",
+                docxMock as unknown as typeof docx
+            );
+            if (plugin.postprocess === undefined)
+                throw new Error("Missing postprocess() method");
+
+            plugin.postprocess(sections);
+            const result = sections[0].children as any[];
+
+            expect(result.length).to.equal(14);
+            expect(result[13].__ctorArgs[0].text).to.equal("");
+            expect(result[13].__ctorArgs[0].spacing).to.eql({
                 before: 0,
                 after: 0,
                 line: 480,

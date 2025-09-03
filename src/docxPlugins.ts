@@ -168,6 +168,10 @@ export const addFrontMatterPlugin: (
                 blankPara,
                 blankPara,
                 ...titleAndAuthor,
+                new docx.Paragraph({
+                    text: "",
+                    spacing: doubleSpaced,
+                }),
                 // The rest of the document
                 ...sections[0].children,
             ];
