@@ -1,6 +1,7 @@
-import { writeFileSync } from "node:fs";
+import * as fs from "node:fs";
 import * as path from "node:path";
 import * as docx from "docx";
+import { Root } from "mdast";
 import { IDocxProps, ISectionProps, toDocx } from "mdast2docx";
 import {
     App,
@@ -23,6 +24,7 @@ import {
     shunnThematicBreakPlugin,
 } from "./docxPlugins";
 import { downloadsFolder } from "./downloadsFolder";
+import { ConfirmModal } from "./obsidianComponents";
 import { folderNameToDocxOutfileName } from "./utilities";
 
 interface ManuscriptenSettings {
@@ -155,7 +157,7 @@ export default class ManuscriptenPlugin extends Plugin {
         let tree;
         for (const note of notes) {
             const content = await this.app.vault.read(note);
-            // ADD WORDCOUNT!
+            // TODO ADD WORDCOUNT!
             const subTree = pipeline.parse(content);
             subTree.children = subTree.children.filter(
                 (node) => node.type !== "yaml"
@@ -177,6 +179,46 @@ export default class ManuscriptenPlugin extends Plugin {
             return;
         }
 
+        const docxArrayBuffer = await this.storyMdToDocx(
+            tree,
+            storyTitle,
+            authorName,
+            authorSurname,
+            authorContactInformation
+        );
+
+        const outFullPath = path.join(outDir, outFilename);
+        if (fs.existsSync(outFullPath)) {
+            new ConfirmModal(
+                this.app,
+                `Manuscript file "${outFilename}" already exists. Overwrite?`,
+                () => {
+                    this.writeDocxFile(outFullPath, docxArrayBuffer);
+                },
+                "Overwrite",
+                "Cancel"
+            ).open();
+        } else {
+            this.writeDocxFile(outFullPath, docxArrayBuffer);
+        }
+    }
+
+    /**
+     * Turn a story's Markdown into the contents of a docx file.
+     * @param tree Markdown abstract syntax tree for the story.
+     * @param storyTitle Title of the story.
+     * @param authorName Author name, or undefined to leave off.
+     * @param authorSurname Author surname, or undefined to leave off.
+     * @param authorContactInformation Author contact information, or undefined to leave off.
+     * @returns Docx content.
+     */
+    private async storyMdToDocx(
+        tree: Root,
+        storyTitle: string,
+        authorName: string | undefined,
+        authorSurname: string | undefined,
+        authorContactInformation: string | undefined
+    ) {
         const docProps: IDocxProps = {
             title: storyTitle,
         };
@@ -231,15 +273,17 @@ export default class ManuscriptenPlugin extends Plugin {
             sectionProps,
             "arraybuffer"
         )) as ArrayBuffer;
+        return docxArrayBuffer;
+    }
 
-        // TODO handle overwriting
-
-        writeFileSync(
-            path.join(outDir, outFilename),
-            Buffer.from(docxArrayBuffer)
-        );
-
-        new Notice(`Manuscript saved as ${outFilename}`);
+    /**
+     * Write a docx file, notifying the Obsidian user.
+     * @param outPath Path to write the output to.
+     * @param content Docx file contents.
+     */
+    private writeDocxFile(outPath: string, content: ArrayBuffer) {
+        fs.writeFileSync(outPath, Buffer.from(content));
+        new Notice(`Manuscript saved as ${path.basename(outPath)}`);
     }
 }
 
