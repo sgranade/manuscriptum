@@ -273,6 +273,16 @@ export default class ManuscriptenPlugin extends Plugin {
     private async storyMdToDocx(tree: Root, metadata: ManuscriptMetadata) {
         const docProps: IDocxProps = {
             title: metadata.title,
+            styles: {
+                default: {
+                    document: {
+                        run: {
+                            font: "Times New Roman",
+                            size: "12pt",
+                        },
+                    },
+                },
+            },
         };
         const sectionProps: ISectionProps = {
             properties: {
