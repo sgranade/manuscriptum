@@ -6,6 +6,7 @@ import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
+import { visit } from "unist-util-visit";
 
 /**
  * Manuscript file's metadata.
@@ -35,6 +36,10 @@ export interface ManuscriptMetadata {
      * Author's contact information, or undefined to anonymize.
      */
     contact?: string;
+    /**
+     * Number of words in the manuscript, or undefined if not known.
+     */
+    wordcount?: number;
 }
 
 /**
@@ -77,6 +82,7 @@ export function obsidianNotesToAST(
     const notices: string[] = [];
 
     const origMetadata = { ...metadata };
+    metadata.wordcount = 0;
 
     let tree;
     for (const info of notesInfo) {
@@ -91,8 +97,9 @@ export function obsidianNotesToAST(
                 "author",
                 "surname",
                 "contact",
+                // Set only string properties in this!
             ] as Array<keyof ManuscriptMetadata>) {
-                const val = info.frontmatter![k];
+                const val = info.frontmatter![k] as string;
                 if (val !== undefined) {
                     // Warn if we re-define metadata
                     if (metadata[k] !== origMetadata[k]) {
@@ -105,7 +112,7 @@ export function obsidianNotesToAST(
                                 `${val}. Using previous output directory: ${metadata.outdir}`
                         );
                     } else {
-                        metadata[k] = val;
+                        (metadata[k] as string) = val; // Trust that we're only setting string properties
                     }
                 }
             }
@@ -118,8 +125,17 @@ export function obsidianNotesToAST(
         }
 
         // Turn markdown content into an AST
-        // TODO ADD WORDCOUNT!
         const subTree = pipeline.parse(info.content);
+
+        // Count words by visiting every text node
+        let count = 0;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        visit(subTree, "text", (node: any) => {
+            const words = node.value.trim().split(/\s+/).filter(Boolean);
+            count += words.length;
+        });
+        metadata.wordcount += count;
+
         subTree.children = subTree.children.filter(
             (node) => node.type !== "yaml"
         );
@@ -129,5 +145,6 @@ export function obsidianNotesToAST(
             tree.children.push({ type: "thematicBreak" }, ...subTree.children);
         }
     }
+
     return [tree, notices];
 }

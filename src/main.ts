@@ -207,6 +207,16 @@ export default class ManuscriptenPlugin extends Plugin {
      * @returns Docx content.
      */
     private async storyMdToDocx(tree: Root, metadata: ManuscriptMetadata) {
+        // If wordcount < 1,000, give exact wordcount. Otherwise, round to nearest 1,000
+        let wordcountDesc = "";
+        if (metadata.wordcount) {
+            if (metadata.wordcount < 1000) {
+                wordcountDesc = `${metadata.wordcount.toLocaleString()} words`;
+            } else {
+                wordcountDesc = `about ${(Math.round(metadata.wordcount / 100) * 100).toLocaleString()} words`;
+            }
+        }
+
         const docProps: IDocxProps = {
             title: metadata.title,
             styles: {
@@ -260,7 +270,7 @@ export default class ManuscriptenPlugin extends Plugin {
                 doubleSpaceAndIndentParas(),
                 addFrontMatterPlugin(
                     metadata.title,
-                    "About 870 words",
+                    wordcountDesc,
                     metadata.author,
                     metadata.contact
                 ),

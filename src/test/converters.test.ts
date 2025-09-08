@@ -88,6 +88,7 @@ describe("Converters", () => {
                 title: "Story Title",
                 filename: "storytitle.docx",
                 outdir: "~/stories",
+                wordcount: 4,
             });
             expect(result).to.be.empty;
         });
@@ -126,6 +127,7 @@ describe("Converters", () => {
                 author: "author",
                 surname: "surname",
                 contact: "contact",
+                wordcount: 4,
             });
             expect(result).to.be.empty;
         });
@@ -154,6 +156,7 @@ describe("Converters", () => {
                 title: "Story Title",
                 filename: "storytitle.docx",
                 outdir: "~/stories",
+                wordcount: 4,
             });
         });
 
@@ -214,6 +217,7 @@ describe("Converters", () => {
                 outdir: "~/stories",
                 author: "authey!",
                 contact: "new contact",
+                wordcount: 7,
             });
         });
 
@@ -252,8 +256,25 @@ describe("Converters", () => {
         });
 
         it("should count the words in the notes", async () => {
-            // TODO
-            expect(1).to.equal(0);
+            const metadata: uut.ManuscriptMetadata = {
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            };
+            const info = [
+                {
+                    name: "notey",
+                    content: "This is our story",
+                },
+                {
+                    name: "notey 1",
+                    content: "The story continues!",
+                },
+            ];
+
+            uut.obsidianNotesToAST(info, metadata, () => true);
+
+            expect(metadata.wordcount).to.equal(7);
         });
     });
 });
