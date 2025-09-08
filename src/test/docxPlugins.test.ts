@@ -4,7 +4,7 @@ import "mocha";
 import * as docx from "docx";
 import { Paragraph, ThematicBreak } from "mdast";
 import { MutableParaOptions } from "mdast2docx/utils";
-import { createDocxModuleMock } from "./mockDocx";
+import { createDocxModuleMock } from "./mocks/mockDocx";
 
 import * as uut from "../docxPlugins";
 

@@ -1,0 +1,259 @@
+import { expect } from "chai";
+import "mocha";
+import { Paragraph, Text } from "mdast";
+
+import * as uut from "../converters";
+
+describe("Converters", () => {
+    describe("Obsidian Notes to AST", () => {
+        it("should convert a single note to Markdown", async () => {
+            const metadata = {
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            };
+            const info = [
+                {
+                    name: "notey",
+                    content: "This is our story",
+                },
+            ];
+
+            const [result, _] = uut.obsidianNotesToAST(info, metadata);
+
+            expect(result?.children[0].type).to.equal("paragraph");
+            expect(
+                (result?.children[0] as Paragraph).children[0].type
+            ).to.equal("text");
+            expect(
+                ((result?.children[0] as Paragraph).children[0] as Text).value
+            ).to.equal("This is our story");
+        });
+
+        it("should turn multiple notes into a single tree separated by a thematic break", async () => {
+            const metadata = {
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            };
+            const info = [
+                {
+                    name: "notey",
+                    content: "This is our story",
+                },
+                {
+                    name: "notey 1",
+                    content: "The story continues!",
+                },
+            ];
+
+            const [result, _] = uut.obsidianNotesToAST(
+                info,
+                metadata,
+                () => true
+            );
+
+            expect(result?.children[0].type).to.equal("paragraph");
+            expect(
+                ((result?.children[0] as Paragraph).children[0] as Text).value
+            ).to.equal("This is our story");
+            expect(result?.children[1].type).to.equal("thematicBreak");
+            expect(result?.children[2].type).to.equal("paragraph");
+            expect(
+                ((result?.children[2] as Paragraph).children[0] as Text).value
+            ).to.equal("The story continues!");
+        });
+
+        it("should ignore a note's non-relevant properties", async () => {
+            const metadata = {
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            };
+            const info = [
+                {
+                    name: "notey",
+                    content: "This is our story",
+                    frontmatter: { irrelevant: "ignored!" },
+                },
+            ];
+
+            const [_, result] = uut.obsidianNotesToAST(
+                info,
+                metadata,
+                () => true
+            );
+
+            expect(metadata).to.eql({
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            });
+            expect(result).to.be.empty;
+        });
+
+        it("should replace existing metadata from a note's properties", async () => {
+            const metadata = {
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            };
+            const info = [
+                {
+                    name: "notey",
+                    content: "This is our story",
+                    frontmatter: {
+                        title: "new title",
+                        filename: "new.docx",
+                        outdir: "~/temp",
+                        author: "author",
+                        surname: "surname",
+                        contact: "contact",
+                    },
+                },
+            ];
+
+            const [_, result] = uut.obsidianNotesToAST(
+                info,
+                metadata,
+                () => true
+            );
+
+            expect(metadata).to.eql({
+                title: "new title",
+                filename: "new.docx",
+                outdir: "~/temp",
+                author: "author",
+                surname: "surname",
+                contact: "contact",
+            });
+            expect(result).to.be.empty;
+        });
+
+        it("should ignore an outdir property that doesn't exist as a directory", async () => {
+            const metadata = {
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            };
+            const info = [
+                {
+                    name: "notey",
+                    content: "This is our story",
+                    frontmatter: {
+                        outdir: "~/temp",
+                    },
+                },
+            ];
+
+            uut.obsidianNotesToAST(info, metadata, (p) =>
+                p === "~/temp" ? false : true
+            );
+
+            expect(metadata).to.eql({
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            });
+        });
+
+        it("should notify if an outdir property doesn't exist as a directory", async () => {
+            const metadata = {
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            };
+            const info = [
+                {
+                    name: "notey",
+                    content: "This is our story",
+                    frontmatter: {
+                        outdir: "~/temp",
+                    },
+                },
+            ];
+
+            const [_, result] = uut.obsidianNotesToAST(info, metadata, (p) =>
+                p === "~/temp" ? false : true
+            );
+
+            expect(result).to.eql([
+                "outdir property on note notey has a non-existent directory: " +
+                    "~/temp. Using previous output directory: ~/stories",
+            ]);
+        });
+
+        it("should overwrite metadata from earlier notes with metadata from later notes", async () => {
+            const metadata = {
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            };
+            const info = [
+                {
+                    name: "notey",
+                    content: "This is our story",
+                    frontmatter: {
+                        title: "Title 1",
+                        author: "authey!",
+                        contact: "3-2-1 contact",
+                    },
+                },
+                {
+                    name: "notey 1",
+                    content: "The story continues!",
+                    frontmatter: { title: "Title 2", contact: "new contact" },
+                },
+            ];
+
+            uut.obsidianNotesToAST(info, metadata, () => true);
+
+            expect(metadata).to.eql({
+                title: "Title 2",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+                author: "authey!",
+                contact: "new contact",
+            });
+        });
+
+        it("should notify the user if multiple notes contain the same metadata property", async () => {
+            const metadata = {
+                title: "Story Title",
+                filename: "storytitle.docx",
+                outdir: "~/stories",
+            };
+            const info = [
+                {
+                    name: "notey",
+                    content: "This is our story",
+                    frontmatter: {
+                        title: "Title 1",
+                        author: "authey!",
+                        contact: "3-2-1 contact",
+                    },
+                },
+                {
+                    name: "notey 1",
+                    content: "The story continues!",
+                    frontmatter: { title: "Title 2", contact: "new contact" },
+                },
+            ];
+
+            const [_, result] = uut.obsidianNotesToAST(
+                info,
+                metadata,
+                () => true
+            );
+
+            expect(result).to.eql([
+                "Note notey 1 re-defined the following properties: title, contact",
+            ]);
+        });
+
+        it("should count the words in the notes", async () => {
+            // TODO
+            expect(1).to.equal(0);
+        });
+    });
+});

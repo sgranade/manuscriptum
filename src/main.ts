@@ -13,11 +13,12 @@ import {
     TFile,
     TFolder,
 } from "obsidian";
-import remarkFrontmatter from "remark-frontmatter";
-import remarkGfm from "remark-gfm";
-import remarkParse from "remark-parse";
-import { unified } from "unified";
 
+import {
+    ManuscriptMetadata,
+    NoteInformation,
+    obsidianNotesToAST,
+} from "./converters";
 import {
     addFrontMatterPlugin,
     doubleSpaceAndIndentParas,
@@ -37,36 +38,6 @@ interface ManuscriptenSettings {
 const DEFAULT_SETTINGS: Partial<ManuscriptenSettings> = {
     outputDir: downloadsFolder(),
 };
-
-/**
- * Manuscript file's metadata.
- */
-interface ManuscriptMetadata {
-    /**
-     * Title of the story.
-     */
-    title: string;
-    /**
-     * Output filename to save the manuscript to.
-     */
-    filename: string;
-    /**
-     * Output directory to save the manuscript to.
-     */
-    outputDir: string;
-    /**
-     * Story author, or undefined to anonymize the MS.
-     */
-    author?: string;
-    /**
-     * Story author's surname, or undefined to anonymize.
-     */
-    surname?: string;
-    /**
-     * Author's contact information, or undefined to anonymize.
-     */
-    contactInformation?: string;
-}
 
 export default class ManuscriptenPlugin extends Plugin {
     settings: ManuscriptenSettings;
@@ -160,18 +131,13 @@ export default class ManuscriptenPlugin extends Plugin {
     }
 
     async saveAsManuscript(folder: TFolder) {
-        const pipeline = unified()
-            .use(remarkParse)
-            .use(remarkGfm)
-            .use(remarkFrontmatter);
-
         const metadata: ManuscriptMetadata = {
             title: folder.name,
             filename: folderNameToDocxOutfileName(folder.name),
-            outputDir: this.settings.outputDir.trim(),
+            outdir: this.settings.outputDir.trim(),
             author: this.settings.authorName.trim(),
             surname: this.settings.authorSurname.trim(),
-            contactInformation: this.settings.authorContactInformation.trim(),
+            contact: this.settings.authorContactInformation.trim(),
         };
 
         const notes = folder.children.filter(
@@ -179,65 +145,18 @@ export default class ManuscriptenPlugin extends Plugin {
         ) as TFile[];
         // TODO handle too-large number of notes (is the user sure? maybe make that a setting)
 
-        let tree;
-        for (const note of notes) {
-            // Check if the note has properties that overwrite the global settings
-            const frontmatter =
-                this.app.metadataCache.getFileCache(note)?.frontmatter;
-            if (frontmatter !== null && frontmatter !== undefined) {
-                if (frontmatter.title !== undefined) {
-                    metadata.title = frontmatter.title.trim();
-                }
-                if (frontmatter.filename !== undefined) {
-                    metadata.filename = frontmatter.filename;
-                }
-                if (frontmatter.outdir !== undefined) {
-                    if (fs.existsSync(frontmatter.outdir)) {
-                        metadata.outputDir = frontmatter.outdir;
-                    } else {
-                        new Notice(
-                            `outdir property on note ${note.name} has a non-existent directory: ` +
-                                `${frontmatter.outdir}. Using default output directory: ${metadata.outputDir}`
-                        );
-                    }
-                }
-                if (frontmatter.author !== undefined) {
-                    metadata.author = frontmatter.author.trim();
-                }
-                if (frontmatter.surname !== undefined) {
-                    metadata.surname = frontmatter.surname.trim();
-                }
-                if (frontmatter.contact !== undefined) {
-                    metadata.contactInformation = frontmatter.contact.trim();
-                }
-            }
+        const notesInfo = await Promise.all(
+            notes.map(async (n): Promise<NoteInformation> => {
+                return {
+                    name: n.name,
+                    content: await this.app.vault.cachedRead(n),
+                    frontmatter:
+                        this.app.metadataCache.getFileCache(n)?.frontmatter,
+                };
+            })
+        );
 
-            if (metadata.author === "") {
-                metadata.author = undefined;
-            }
-            if (metadata.surname === "") {
-                metadata.surname = undefined;
-            }
-            if (metadata.contactInformation === "") {
-                metadata.contactInformation = undefined;
-            }
-
-            // Turn markdown content into an AST
-            const content = await this.app.vault.cachedRead(note);
-            // TODO ADD WORDCOUNT!
-            const subTree = pipeline.parse(content);
-            subTree.children = subTree.children.filter(
-                (node) => node.type !== "yaml"
-            );
-            if (tree === undefined) {
-                tree = subTree;
-            } else {
-                tree.children.push(
-                    { type: "thematicBreak" },
-                    ...subTree.children
-                );
-            }
-        }
+        const [tree, notices] = obsidianNotesToAST(notesInfo, metadata);
 
         if (tree === undefined) {
             new Notice(
@@ -246,9 +165,26 @@ export default class ManuscriptenPlugin extends Plugin {
             return;
         }
 
+        if (notices.length) {
+            for (const notice of notices) {
+                new Notice(notice);
+            }
+        }
+
+        // If any of our author/contact info is empty, mark it as undefined
+        if (metadata.author === "") {
+            metadata.author = undefined;
+        }
+        if (metadata.surname === "") {
+            metadata.surname = undefined;
+        }
+        if (metadata.contact === "") {
+            metadata.contact = undefined;
+        }
+
         const docxArrayBuffer = await this.storyMdToDocx(tree, metadata);
 
-        const outFullPath = path.join(metadata.outputDir, metadata.filename);
+        const outFullPath = path.join(metadata.outdir, metadata.filename);
         if (fs.existsSync(outFullPath)) {
             new ConfirmModal(
                 this.app,
@@ -326,7 +262,7 @@ export default class ManuscriptenPlugin extends Plugin {
                     metadata.title,
                     "About 870 words",
                     metadata.author,
-                    metadata.contactInformation
+                    metadata.contact
                 ),
             ],
         };
@@ -347,8 +283,8 @@ export default class ManuscriptenPlugin extends Plugin {
      */
     private writeDocxFile(outPath: string, content: ArrayBuffer) {
         try {
-        fs.writeFileSync(outPath, Buffer.from(content));
-        new Notice(`Manuscript saved as ${path.basename(outPath)}`);
+            fs.writeFileSync(outPath, Buffer.from(content));
+            new Notice(`Manuscript saved as ${path.basename(outPath)}`);
         } catch (e) {
             new Notice(`Failed to write manuscript: ${e}`);
         }
