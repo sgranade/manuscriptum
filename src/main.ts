@@ -49,7 +49,7 @@ export default class ManuscriptenPlugin extends Plugin {
 
         this.addEnmanuscriptContextMenuItems();
 
-        this.addEnmanuscriptCommands();
+        this.addManuscriptumCommands();
     }
 
     onunload() {}
@@ -67,6 +67,24 @@ export default class ManuscriptenPlugin extends Plugin {
     }
 
     /**
+     * Handle context menu items.
+     * @param node Obsidian folder or file that was right-clicked on.
+     * @param anonymize Whether or not to anonymize the MS.
+     */
+    onContextClick(node: TFolder | TFile | null, anonymize: boolean) {
+        // If we're run on a file, find the containing folder
+        if (node instanceof TFile) {
+            node = node.parent;
+        }
+
+        if (node instanceof TFolder) {
+            this.saveAsManuscript(node, anonymize);
+        } else {
+            console.error("Unexpected type of folder:", node);
+        }
+    }
+
+    /**
      * Add enmanuscript items to the file pane context menu for notes and folders.
      */
     addEnmanuscriptContextMenuItems() {
@@ -79,22 +97,14 @@ export default class ManuscriptenPlugin extends Plugin {
                     menu.addItem((item) => {
                         item.setTitle("Save as manuscript (Shunn modern)")
                             .setIcon("book-text") // Lucide icon name
-                            .onClick(() => {
-                                let node: TFolder | TFile | null = file;
-                                // If we're run on a file, find the containing folder
-                                if (node instanceof TFile) {
-                                    node = node.parent;
-                                }
-
-                                if (node instanceof TFolder) {
-                                    this.saveAsManuscript(node);
-                                } else {
-                                    console.error(
-                                        "Unexpected type of folder:",
-                                        node
-                                    );
-                                }
-                            });
+                            .onClick(() => this.onContextClick(file, false));
+                    });
+                    menu.addItem((item) => {
+                        item.setTitle(
+                            "Save as anonymous manuscript (Shunn modern)"
+                        )
+                            .setIcon("book-text") // Lucide icon name
+                            .onClick(() => this.onContextClick(file, true));
                     });
                 }
             })
@@ -102,20 +112,22 @@ export default class ManuscriptenPlugin extends Plugin {
     }
 
     /**
-     * Add enmanuscript commands when a note is open.
+     * Callback for whether Manuscriptum commands are allowed, and how to handle them if allowed.
+     * @param checking Whether we're checking that a command is valid or executing the command.
+     * @param anonymize Whether or not to anonymize the MS.
+     * @returns True if the command should be allowed; false or void otherwise.
      */
-    addEnmanuscriptCommands() {
-        this.addCommand({
-            id: "save-as-manuscript",
-            name: "Save as manuscript (Shunn Modern)",
-            checkCallback: (checking: boolean) => {
-                // Only happen if we're in a markdown view
+    commandCheckCallback(
+        checking: boolean,
+        anonymize: boolean
+    ): boolean | void {
+        // Only available in a Markdown view
                 const markdownView =
                     this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (markdownView && markdownView.file !== null) {
                     if (!checking) {
                         if (markdownView.file.parent instanceof TFolder) {
-                            this.saveAsManuscript(markdownView.file.parent);
+                    this.saveAsManuscript(markdownView.file.parent, anonymize);
                         } else {
                             console.error(
                                 "Note didn't have a folder:",
@@ -126,11 +138,27 @@ export default class ManuscriptenPlugin extends Plugin {
 
                     return true;
                 }
-            },
+    }
+
+    /**
+     * Add commands when a note is open.
+     */
+    addManuscriptumCommands() {
+        this.addCommand({
+            id: "save-as-manuscript",
+            name: "Save as manuscript (Shunn Modern)",
+            checkCallback: (checking: boolean) =>
+                this.commandCheckCallback(checking, false),
+        });
+        this.addCommand({
+            id: "save-as-anon-manuscript",
+            name: "Save as anonymous manuscript (Shunn Modern)",
+            checkCallback: (checking: boolean) =>
+                this.commandCheckCallback(checking, true),
         });
     }
 
-    async saveAsManuscript(folder: TFolder) {
+    async saveAsManuscript(folder: TFolder, anonymize = false) {
         const metadata: ManuscriptMetadata = {
             title: folder.name,
             filename: folderNameToDocxOutfileName(folder.name),
@@ -171,14 +199,14 @@ export default class ManuscriptenPlugin extends Plugin {
             }
         }
 
-        // If any of our author/contact info is empty, mark it as undefined
-        if (metadata.author === "") {
+        // If any of our author/contact info is empty, or if we're anonymizing, mark as undefined
+        if (metadata.author === "" || anonymize) {
             metadata.author = undefined;
         }
-        if (metadata.surname === "") {
+        if (metadata.surname === "" || anonymize) {
             metadata.surname = undefined;
         }
-        if (metadata.contact === "") {
+        if (metadata.contact === "" || anonymize) {
             metadata.contact = undefined;
         }
 
