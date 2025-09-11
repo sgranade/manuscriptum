@@ -28,26 +28,26 @@ import { downloadsFolder } from "./downloadsFolder";
 import { ConfirmModal } from "./obsidianComponents";
 import { folderNameToDocxOutfileName } from "./utilities";
 
-interface ManuscriptenSettings {
+interface ManuscriptumSettings {
     authorName: string;
     authorSurname: string;
     authorContactInformation: string;
     outputDir: string;
 }
 
-const DEFAULT_SETTINGS: Partial<ManuscriptenSettings> = {
+const DEFAULT_SETTINGS: Partial<ManuscriptumSettings> = {
     outputDir: downloadsFolder(),
 };
 
-export default class ManuscriptenPlugin extends Plugin {
-    settings: ManuscriptenSettings;
+export default class ManuscriptumPlugin extends Plugin {
+    settings: ManuscriptumSettings;
 
     async onload() {
         await this.loadSettings();
 
-        this.addSettingTab(new ManuscriptenSettingTab(this.app, this));
+        this.addSettingTab(new ManuscriptumSettingTab(this.app, this));
 
-        this.addEnmanuscriptContextMenuItems();
+        this.addManuscriptumContextMenuItems();
 
         this.addManuscriptumCommands();
     }
@@ -85,9 +85,9 @@ export default class ManuscriptenPlugin extends Plugin {
     }
 
     /**
-     * Add enmanuscript items to the file pane context menu for notes and folders.
+     * Add items to the file pane context menu for notes and folders.
      */
-    addEnmanuscriptContextMenuItems() {
+    addManuscriptumContextMenuItems() {
         this.registerEvent(
             this.app.workspace.on("file-menu", (menu, file) => {
                 if (
@@ -329,10 +329,10 @@ export default class ManuscriptenPlugin extends Plugin {
     }
 }
 
-class ManuscriptenSettingTab extends PluginSettingTab {
-    plugin: ManuscriptenPlugin;
+class ManuscriptumSettingTab extends PluginSettingTab {
+    plugin: ManuscriptumPlugin;
 
-    constructor(app: App, plugin: ManuscriptenPlugin) {
+    constructor(app: App, plugin: ManuscriptumPlugin) {
         super(app, plugin);
         this.plugin = plugin;
     }
