@@ -168,6 +168,25 @@ export default class ManuscriptumPlugin extends Plugin {
             contact: this.settings.authorContactInformation.trim(),
         };
 
+        // Have the user fill out required settings if blank
+        const missingSettings: string[] = [];
+        if (!anonymize) {
+            if (metadata.author === "") missingSettings.push("Author Name");
+            if (metadata.surname === "") missingSettings.push("Author Surname");
+            if (metadata.contact === "")
+                missingSettings.push("Author Contact Information");
+        }
+        if (missingSettings.length > 0) {
+            new Notice(
+                `Please configure Manuscriptum settings: ${missingSettings.join(", ")}.`
+            );
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const setting = (this.app as any).setting;
+            await setting.open();
+            setting.openTabById("tab-name");
+            return;
+        }
+
         const notes = folder.children.filter(
             (f) => f instanceof TFile && f.extension === "md"
         ) as TFile[];
