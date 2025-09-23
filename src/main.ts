@@ -39,6 +39,26 @@ const DEFAULT_SETTINGS: Partial<ManuscriptumSettings> = {
     outputDir: downloadsFolder(),
 };
 
+/**
+ * Titles that correspond to ManuscriptumSettings.
+ */
+const SettingTitles = {
+    AuthorName: "Author Name",
+    AuthorSurname: "Author Surname",
+    AuthorContactInformation: "Author Contact Information",
+    OutputDir: "Output Directory",
+} as const;
+
+/**
+ * Create a selector ID for a setting.
+ * @param plugin Plugin.
+ * @param settingTitle Title of the setting (such as "Author Name").
+ * @returns The selector ID for the setting.
+ */
+function createSettingId(plugin: Plugin, settingTitle: string): string {
+    return `${plugin.manifest.id}-${settingTitle.toLocaleLowerCase().replace(/ /g, "-")}-input`;
+}
+
 export default class ManuscriptumPlugin extends Plugin {
     settings: ManuscriptumSettings;
 
@@ -158,6 +178,16 @@ export default class ManuscriptumPlugin extends Plugin {
         });
     }
 
+    /**
+     * Open the plugin's settings tab in the settings pane.
+     */
+    openSettingsTab() {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const setting = (this.app as any).setting;
+        setting.open();
+        setting.openTabById(this.manifest.id);
+    }
+
     async saveAsManuscript(folder: TFolder, anonymize = false) {
         const metadata: ManuscriptMetadata = {
             title: folder.name,
@@ -171,19 +201,30 @@ export default class ManuscriptumPlugin extends Plugin {
         // Have the user fill out required settings if blank
         const missingSettings: string[] = [];
         if (!anonymize) {
-            if (metadata.author === "") missingSettings.push("Author Name");
-            if (metadata.surname === "") missingSettings.push("Author Surname");
+            if (metadata.author === "")
+                missingSettings.push(SettingTitles.AuthorName);
+            if (metadata.surname === "")
+                missingSettings.push(SettingTitles.AuthorSurname);
             if (metadata.contact === "")
-                missingSettings.push("Author Contact Information");
+                missingSettings.push(SettingTitles.AuthorContactInformation);
         }
         if (missingSettings.length > 0) {
             new Notice(
                 `Please configure Manuscriptum settings: ${missingSettings.join(", ")}.`
             );
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const setting = (this.app as any).setting;
-            await setting.open();
-            setting.openTabById("tab-name");
+            this.openSettingsTab();
+            // Wait for a paint cycle
+            requestAnimationFrame(() => {
+                for (const settingName of missingSettings) {
+                    const settingEl = document.querySelector(
+                        `#${createSettingId(this, settingName)}`
+                    ) as HTMLElement;
+                    if (settingEl) {
+                        // The actual input is the child of the control div
+                        settingEl.style.border = "2px solid red";
+                    }
+                }
+            });
             return;
         }
 
@@ -361,58 +402,95 @@ class ManuscriptumSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
+        // Each setting needs an ID so we can later select it
         new Setting(containerEl)
-            .setName("Author Name")
+            .setName(SettingTitles.AuthorName)
             .setDesc("Appears at the top of the manuscript")
-            .addText((text) =>
-                text
-                    .setPlaceholder("Example: Jae Simons")
+            .addText((text) => {
+                const el = text.inputEl;
+                text.setPlaceholder("Example: Jae Simons")
                     .setValue(this.plugin.settings.authorName)
                     .onChange(async (value) => {
                         this.plugin.settings.authorName = value;
                         await this.plugin.saveSettings();
-                    })
-            );
-
+                        // Remove the possible red border when a value is entered
+                        if (value.trim().length > 0) {
+                            text.inputEl.style.border = "";
+                        }
+                    });
+                el.setAttribute(
+                    "id",
+                    createSettingId(this.plugin, SettingTitles.AuthorName)
+                );
+                el.style.transition = "border-color 0.3s ease-in-out";
+            });
         new Setting(containerEl)
-            .setName("Author Surname")
+            .setName(SettingTitles.AuthorSurname)
             .setDesc("Appears in manuscript headers")
-            .addText((text) =>
-                text
-                    .setPlaceholder("Example: Simons")
+            .addText((text) => {
+                const el = text.inputEl;
+                text.setPlaceholder("Example: Simons")
                     .setValue(this.plugin.settings.authorSurname)
                     .onChange(async (value) => {
                         this.plugin.settings.authorSurname = value;
                         await this.plugin.saveSettings();
-                    })
-            );
-
+                        // Remove the possible red border when a value is entered
+                        if (value.trim().length > 0) {
+                            text.inputEl.style.border = "";
+                        }
+                    });
+                el.setAttribute(
+                    "id",
+                    createSettingId(this.plugin, SettingTitles.AuthorSurname)
+                );
+                el.style.transition = "border-color 0.3s ease-in-out";
+            });
         new Setting(containerEl)
-            .setName("Author Contact Information")
+            .setName(SettingTitles.AuthorContactInformation)
             .setDesc("Appears in the manuscript front matter")
-            .addTextArea((text) =>
-                text
-                    .setPlaceholder(
+            .addTextArea((text) => {
+                const el = text.inputEl;
+                text.setPlaceholder(
                         "Example: Jae Simons\njaesimons@actualemail.com"
                     )
                     .setValue(this.plugin.settings.authorContactInformation)
                     .onChange(async (value) => {
                         this.plugin.settings.authorContactInformation = value;
                         await this.plugin.saveSettings();
-                    })
+                        // Remove the possible red border when a value is entered
+                        if (value.trim().length > 0) {
+                            text.inputEl.style.border = "";
+                        }
+                    });
+                el.setAttribute(
+                    "id",
+                    createSettingId(
+                        this.plugin,
+                        SettingTitles.AuthorContactInformation
+                    )
             );
-
+                el.style.transition = "border-color 0.3s ease-in-out";
+            });
         new Setting(containerEl)
-            .setName("Output Directory")
+            .setName(SettingTitles.OutputDir)
             .setDesc("Where to put the .docx files")
-            .addText((text) =>
-                text
-                    .setPlaceholder("Example: c:/users/jsimons/Documents")
+            .addText((text) => {
+                const el = text.inputEl;
+                text.setPlaceholder("Example: c:/users/jsimons/Documents")
                     .setValue(this.plugin.settings.outputDir)
                     .onChange(async (value) => {
                         this.plugin.settings.outputDir = value;
                         await this.plugin.saveSettings();
-                    })
-            );
+                        // Remove the possible red border when a value is entered
+                        if (value.trim().length > 0) {
+                            text.inputEl.style.border = "";
+                        }
+                    });
+                el.setAttribute(
+                    "id",
+                    createSettingId(this.plugin, SettingTitles.OutputDir)
+                );
+                el.style.transition = "border-color 0.3s ease-in-out";
+            });
     }
 }
