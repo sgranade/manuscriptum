@@ -10,6 +10,7 @@ import {
     Plugin,
     PluginSettingTab,
     Setting,
+    TextComponent,
     TFile,
     TFolder,
 } from "obsidian";
@@ -198,36 +199,6 @@ export default class ManuscriptumPlugin extends Plugin {
             contact: this.settings.authorContactInformation.trim(),
         };
 
-        // Have the user fill out required settings if blank
-        const missingSettings: string[] = [];
-        if (!anonymize) {
-            if (metadata.author === "")
-                missingSettings.push(SettingTitles.AuthorName);
-            if (metadata.surname === "")
-                missingSettings.push(SettingTitles.AuthorSurname);
-            if (metadata.contact === "")
-                missingSettings.push(SettingTitles.AuthorContactInformation);
-        }
-        if (missingSettings.length > 0) {
-            new Notice(
-                `Please configure Manuscriptum settings: ${missingSettings.join(", ")}.`
-            );
-            this.openSettingsTab();
-            // Wait for a paint cycle
-            requestAnimationFrame(() => {
-                for (const settingName of missingSettings) {
-                    const settingEl = document.querySelector(
-                        `#${createSettingId(this, settingName)}`
-                    ) as HTMLElement;
-                    if (settingEl) {
-                        // The actual input is the child of the control div
-                        settingEl.style.border = "2px solid red";
-                    }
-                }
-            });
-            return;
-        }
-
         const notes = folder.children.filter(
             (f) => f instanceof TFile && f.extension === "md"
         ) as TFile[];
@@ -257,6 +228,44 @@ export default class ManuscriptumPlugin extends Plugin {
             for (const notice of notices) {
                 new Notice(notice);
             }
+        }
+
+        // Now that metadata is fully filled in, check whether we need blank settings filled in.
+        // Note that blank metadata can only come from settings, as blank
+        // metadata in note frontmatter is skipped by `obsidianNotesToAST()`.
+        const missingSettings: string[] = [];
+        if (!anonymize) {
+            if (metadata.author === "")
+                missingSettings.push(SettingTitles.AuthorName);
+            if (metadata.surname === "")
+                missingSettings.push(SettingTitles.AuthorSurname);
+            if (metadata.contact === "")
+                missingSettings.push(SettingTitles.AuthorContactInformation);
+        }
+        // A non-existent directory can only come from settings,
+        // as `obsidianNotesToAST()` rejects non-existent output
+        // directories that are defined in notes' frontmatter.
+        if (!fs.existsSync(metadata.outdir)) {
+            missingSettings.push(SettingTitles.OutputDir);
+        }
+        if (missingSettings.length > 0) {
+            new Notice(
+                `Please configure Manuscriptum settings: ${missingSettings.join(", ")}.`
+            );
+            this.openSettingsTab();
+            // Wait for a paint cycle
+            requestAnimationFrame(() => {
+                for (const settingName of missingSettings) {
+                    const settingEl = document.querySelector(
+                        `#${createSettingId(this, settingName)}`
+                    ) as HTMLElement;
+                    if (settingEl) {
+                        // The actual input is the child of the control div
+                        settingEl.style.border = "2px solid red";
+                    }
+                }
+            });
+            return;
         }
 
         // If any of our author/contact info is empty, or if we're anonymizing, mark as undefined
@@ -413,9 +422,11 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.authorName = value;
                         await this.plugin.saveSettings();
-                        // Remove the possible red border when a value is entered
+                        // Warn the user if left empty
                         if (value.trim().length > 0) {
                             text.inputEl.style.border = "";
+                        } else {
+                            text.inputEl.style.border = "2px solid red";
                         }
                     });
                 el.setAttribute(
@@ -434,9 +445,11 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.authorSurname = value;
                         await this.plugin.saveSettings();
-                        // Remove the possible red border when a value is entered
+                        // Warn the user if left empty
                         if (value.trim().length > 0) {
                             text.inputEl.style.border = "";
+                        } else {
+                            text.inputEl.style.border = "2px solid red";
                         }
                     });
                 el.setAttribute(
@@ -457,9 +470,11 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.authorContactInformation = value;
                         await this.plugin.saveSettings();
-                        // Remove the possible red border when a value is entered
+                        // Warn the user if left empty
                         if (value.trim().length > 0) {
                             text.inputEl.style.border = "";
+                        } else {
+                            text.inputEl.style.border = "2px solid red";
                         }
                     });
                 el.setAttribute(
@@ -471,26 +486,52 @@ class ManuscriptumSettingTab extends PluginSettingTab {
             );
                 el.style.transition = "border-color 0.3s ease-in-out";
             });
-        new Setting(containerEl)
+        let outDirTextComponent: TextComponent | null = null;
+        // Save the onChange() handler so we can call it programmatically.
+        const outDirTextComponentOnChange = async (value: string) => {
+            this.plugin.settings.outputDir = value;
+            await this.plugin.saveSettings();
+            if (outDirTextComponent !== null) {
+                if (fs.existsSync(value)) {
+                    outDirTextComponent.inputEl.style.border = "";
+                } else {
+                    outDirTextComponent.inputEl.style.border = "2px solid red";
+                }
+            }
+        };
+        const outDirSetting = new Setting(containerEl)
             .setName(SettingTitles.OutputDir)
             .setDesc("Where to put the .docx files")
             .addText((text) => {
+                outDirTextComponent = text;
                 const el = text.inputEl;
                 text.setPlaceholder("Example: c:/users/jsimons/Documents")
                     .setValue(this.plugin.settings.outputDir)
-                    .onChange(async (value) => {
-                        this.plugin.settings.outputDir = value;
-                        await this.plugin.saveSettings();
-                        // Remove the possible red border when a value is entered
-                        if (value.trim().length > 0) {
-                            text.inputEl.style.border = "";
-                        }
-                    });
+                    .onChange(outDirTextComponentOnChange);
                 el.setAttribute(
                     "id",
                     createSettingId(this.plugin, SettingTitles.OutputDir)
                 );
                 el.style.transition = "border-color 0.3s ease-in-out";
+            });
+        outDirSetting.addButton((button) => {
+            button.setButtonText("Select Directory").onClick(async () => {
+                const input = document.createElement("input");
+                input.type = "file";
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (input as any).webkitdirectory = true; // So we pick directories only
+                input.onchange = async () => {
+                    if (input.files && input.files.length > 0) {
+                        const file = input.files[0] as File & { path: string };
+                        const dir = path.dirname(file.path);
+                        if (outDirTextComponent !== null) {
+                            outDirTextComponent.setValue(dir);
+                            outDirTextComponentOnChange(dir);
+                        }
+                    }
+                };
+                input.click();
+            });
             });
     }
 }

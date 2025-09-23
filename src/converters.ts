@@ -63,7 +63,7 @@ export interface NoteInformation {
 /**
  * Create Markdown AST from Obsidian notes.
  *
- * Notes' properties can overwrite the existing manuscript metadata.
+ * Notes' properties can overwrite the existing manuscript metadata if they're non-blank.
  *
  * @param notesInfo Info about Obsidian notes.
  * @param metadata Manuscript metadata.
@@ -101,6 +101,14 @@ export function obsidianNotesToAST(
             ] as Array<keyof ManuscriptMetadata>) {
                 const val = info.frontmatter![k] as string;
                 if (val !== undefined) {
+                    // Don't allow blank metadata
+                    if (val.trim() === "") {
+                        notices.push(
+                            `${k} property on note ${info.name} is blank. Ignoring.`
+                        );
+                        continue;
+                    }
+
                     // Warn if we re-define metadata
                     if (metadata[k] !== origMetadata[k]) {
                         redefinedProps.push(k);
