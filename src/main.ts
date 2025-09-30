@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as docx from "docx";
+import { shell } from "electron";
 import { Root } from "mdast";
 import { IDocxProps, ISectionProps, toDocx } from "mdast2docx";
 import {
@@ -143,22 +144,22 @@ export default class ManuscriptumPlugin extends Plugin {
         anonymize: boolean
     ): boolean | void {
         // Only available in a Markdown view
-                const markdownView =
-                    this.app.workspace.getActiveViewOfType(MarkdownView);
-                if (markdownView && markdownView.file !== null) {
-                    if (!checking) {
-                        if (markdownView.file.parent instanceof TFolder) {
+        const markdownView =
+            this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (markdownView && markdownView.file !== null) {
+            if (!checking) {
+                if (markdownView.file.parent instanceof TFolder) {
                     this.saveAsManuscript(markdownView.file.parent, anonymize);
-                        } else {
-                            console.error(
-                                "Note didn't have a folder:",
-                                markdownView.file
-                            );
-                        }
-                    }
-
-                    return true;
+                } else {
+                    console.error(
+                        "Note didn't have a folder:",
+                        markdownView.file
+                    );
                 }
+            }
+
+            return true;
+        }
     }
 
     /**
@@ -260,7 +261,6 @@ export default class ManuscriptumPlugin extends Plugin {
                         `#${createSettingId(this, settingName)}`
                     ) as HTMLElement;
                     if (settingEl) {
-                        // The actual input is the child of the control div
                         settingEl.style.border = "2px solid red";
                     }
                 }
@@ -391,7 +391,36 @@ export default class ManuscriptumPlugin extends Plugin {
     private writeDocxFile(outPath: string, content: ArrayBuffer) {
         try {
             fs.writeFileSync(outPath, Buffer.from(content));
-            new Notice(`Manuscript saved as ${path.basename(outPath)}`);
+            const notice = new Notice("");
+            const messageEl = createFragment((f) => {
+                f.createSpan({
+                    text: `Manuscript saved as "${path.basename(outPath)}"`,
+                });
+                f.createEl("br");
+                const italEl = f.createEl("em");
+                italEl.createSpan({ text: "(Open " });
+                const fileLinkEl = italEl.createEl("a", {
+                    text: "file",
+                    attr: {
+                        href: "#",
+                    },
+                });
+                fileLinkEl.onclick = async (evt) => {
+                    evt.preventDefault();
+                    await shell.openPath(outPath);
+                };
+                italEl.createSpan({ text: " | " });
+                const folderLinkEl = italEl.createEl("a", {
+                    text: "folder",
+                    attr: { href: "#" },
+                });
+                folderLinkEl.onclick = async (evt) => {
+                    evt.preventDefault();
+                    await shell.openPath(path.dirname(outPath));
+                };
+                italEl.createSpan({ text: " )" });
+            });
+            notice.messageEl.appendChild(messageEl);
         } catch (e) {
             new Notice(`Failed to write manuscript: ${e}`);
         }
@@ -464,8 +493,8 @@ class ManuscriptumSettingTab extends PluginSettingTab {
             .addTextArea((text) => {
                 const el = text.inputEl;
                 text.setPlaceholder(
-                        "Example: Jae Simons\njaesimons@actualemail.com"
-                    )
+                    "Example: Jae Simons\njaesimons@actualemail.com"
+                )
                     .setValue(this.plugin.settings.authorContactInformation)
                     .onChange(async (value) => {
                         this.plugin.settings.authorContactInformation = value;
@@ -483,7 +512,7 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                         this.plugin,
                         SettingTitles.AuthorContactInformation
                     )
-            );
+                );
                 el.style.transition = "border-color 0.3s ease-in-out";
             });
         let outDirTextComponent: TextComponent | null = null;
@@ -532,6 +561,6 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                 };
                 input.click();
             });
-            });
+        });
     }
 }
