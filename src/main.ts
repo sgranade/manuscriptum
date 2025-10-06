@@ -8,6 +8,7 @@ import {
     App,
     MarkdownView,
     Notice,
+    normalizePath,
     Plugin,
     PluginSettingTab,
     Setting,
@@ -194,7 +195,7 @@ export default class ManuscriptumPlugin extends Plugin {
         const metadata: ManuscriptMetadata = {
             title: folder.name,
             filename: folderNameToDocxOutfileName(folder.name),
-            outdir: this.settings.outputDir.trim(),
+            outdir: normalizePath(this.settings.outputDir.trim()),
             author: this.settings.authorName.trim(),
             surname: this.settings.authorSurname.trim(),
             contact: this.settings.authorContactInformation.trim(),

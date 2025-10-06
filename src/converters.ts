@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 
 import { Root } from "mdast";
-import { FrontMatterCache } from "obsidian";
+import { FrontMatterCache, normalizePath } from "obsidian";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
@@ -99,7 +99,7 @@ export function obsidianNotesToAST(
                 "contact",
                 // Set only string properties in this!
             ] as Array<keyof ManuscriptMetadata>) {
-                const val = info.frontmatter![k] as string;
+                let val = info.frontmatter![k] as string;
                 if (val !== undefined) {
                     // Don't allow blank metadata
                     if (val.trim() === "") {
@@ -113,6 +113,8 @@ export function obsidianNotesToAST(
                     if (metadata[k] !== origMetadata[k]) {
                         redefinedProps.push(k);
                     }
+                    // Normalize outputDir
+                    if (k === "outdir") val = normalizePath(val);
                     // Do an existence check for outputDir
                     if (k === "outdir" && !existsSync(val)) {
                         notices.push(
