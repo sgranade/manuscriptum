@@ -45,10 +45,10 @@ const DEFAULT_SETTINGS: Partial<ManuscriptumSettings> = {
  * Titles that correspond to ManuscriptumSettings.
  */
 const SettingTitles = {
-    AuthorName: "Author Name",
-    AuthorSurname: "Author Surname",
-    AuthorContactInformation: "Author Contact Information",
-    OutputDir: "Output Directory",
+    AuthorName: "Author name",
+    AuthorSurname: "Author surname",
+    AuthorContactInformation: "Author contact information",
+    OutputDir: "Output directory",
 } as const;
 
 /**
