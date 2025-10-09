@@ -19,7 +19,7 @@ describe("Plugins", () => {
                 TableCell: docx.TableCell,
             });
             const node: ThematicBreak = { type: "thematicBreak" };
-            const plugin = uut.shunnThematicBreakPlugin();
+            const plugin = uut.shunnThematicBreakPlugin(false);
             if (plugin.block === undefined)
                 throw new Error("Missing block() method");
 
@@ -37,6 +37,40 @@ describe("Plugins", () => {
                 text: "#",
                 alignment: "center",
                 spacing: { before: 0 },
+            });
+        });
+
+        it("should double-space centered hash marks when the plugin is constructed with that setting", () => {
+            const { docxMock } = createDocxModuleMock({
+                TextRun: docx.TextRun,
+                Paragraph: docx.Paragraph,
+                Table: docx.Table,
+                TableRow: docx.TableRow,
+                TableCell: docx.TableCell,
+            });
+            const node: ThematicBreak = { type: "thematicBreak" };
+            const plugin = uut.shunnThematicBreakPlugin(true);
+            if (plugin.block === undefined)
+                throw new Error("Missing block() method");
+
+            const l = plugin.block(
+                docxMock as typeof docx,
+                node,
+                {},
+                (node, paraProps) => [],
+                (node) => []
+            );
+            const result = l[0];
+
+            expect(l.length).to.equal(1);
+            expect((l[0] as any).__ctorArgs[0]).to.eql({
+                text: "#",
+                alignment: "center",
+                spacing: {
+                    before: 0,
+                    line: 480,
+                    lineRule: docx.LineRuleType.AUTO,
+                },
             });
         });
     });

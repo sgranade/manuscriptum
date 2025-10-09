@@ -7,19 +7,24 @@ import { IPlugin } from "mdast2docx";
  *
  * By default mdast2docx turns thematic breaks into a full horizontal rule.
  */
-export const shunnThematicBreakPlugin: () => IPlugin = () => {
+export const shunnThematicBreakPlugin: (doubleSpace: boolean) => IPlugin = (
+    doubleSpace
+) => {
     // Code based on https://github.com/md2docx/table/
+    const spacing = doubleSpace
+        ? { before: 0, line: 480, lineRule: LineRuleType.AUTO }
+        : { before: 0 };
     return {
         block: (docx, node) => {
             if (node.type !== "thematicBreak") return [];
 
-            // @ts-expect-error - Setting type to empty string to avoid re-processing the node.
+            // @ts-expect-error - Setting type to empty string to avoid mdast2docx also processing the node.
             node.type = "";
             return [
                 new docx.Paragraph({
                     text: "#",
                     alignment: "center",
-                    spacing: { before: 0 },
+                    spacing: spacing,
                 }),
             ];
         },
