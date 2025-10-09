@@ -29,6 +29,7 @@ import {
 } from "./docxPlugins";
 import { downloadsFolder } from "./downloadsFolder";
 import { ConfirmModal } from "./obsidianComponents";
+import { sortChildrenInFileExplorerOrder } from "./obsidianUtilities";
 import { folderNameToDocxOutfileName } from "./utilities";
 
 interface ManuscriptumSettings {
@@ -201,9 +202,10 @@ export default class ManuscriptumPlugin extends Plugin {
             contact: this.settings.authorContactInformation.trim(),
         };
 
-        const notes = folder.children.filter(
-            (f) => f instanceof TFile && f.extension === "md"
-        ) as TFile[];
+        const notes = sortChildrenInFileExplorerOrder(
+            this.app.workspace,
+            folder.children
+        ).filter((f) => f instanceof TFile && f.extension === "md") as TFile[];
         // TODO handle too-large number of notes (is the user sure? maybe make that a setting)
 
         const notesInfo = await Promise.all(

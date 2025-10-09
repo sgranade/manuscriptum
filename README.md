@@ -14,6 +14,9 @@ Features:
 
 Each of your stories must be in its own folder. The story's title is the name of the folder. You can write your stories either in a single note or in a collection of notes. Multiple notes will be treated as individual scenes and combined with a scene break (`#`) between each one. To add scene breaks to an individual note, use the Markdown format for horizontal lines (`---`).
 
+> [!WARNING]
+> Manuscriptum tries to sort the notes in the same order as they show up in your file explorer, but it will fail if you use a plugin that lets you manually change that sort order like [Custom File Explorer sorting](https://github.com/SebastianMC/obsidian-custom-sort).
+
 You can turn your story into a `.docx` file in two ways:
 
 - Right click any note in your story folder or the story folder itself and select one of the "Save as manuscript..." Manuscripum commands from the context menu.
