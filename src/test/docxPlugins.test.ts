@@ -227,7 +227,15 @@ describe("Plugins", () => {
                 TableCell: docx.TableCell,
             });
 
-            const sections = [{ children: [] }];
+            const sections = [
+                {
+                    children: [
+                        new docxMock.Paragraph({
+                            text: "First line",
+                        }),
+                    ],
+                },
+            ];
             const plugin = uut.addFrontMatterPlugin(
                 "Story Title",
                 "About 700 words",
@@ -241,9 +249,11 @@ describe("Plugins", () => {
             plugin.postprocess(sections);
             const result = sections[0].children as any[];
 
-            expect(result.length).to.equal(14); // ends with title, author, blank para
+            expect(result.length).to.equal(15); // ends with title, author, blank para, first line para
             expect(result[11].__ctorArgs[0].text).to.equal("Story Title");
             expect(result[12].__ctorArgs[0].text).to.equal("by Authorr");
+            expect(result[13].__ctorArgs[0].text).to.equal("");
+            expect(result[14].__ctorArgs[0].text).to.equal("First line");
         });
 
         it("should center title and author", () => {
@@ -341,6 +351,42 @@ describe("Plugins", () => {
                 line: 480,
                 lineRule: docx.LineRuleType.AUTO,
             });
+        });
+
+        it("should only add front matter once to sections even if called twice", () => {
+            // This behavior is necessary because mdast2docx can call the plugin's postprocess() twice
+            const { docxMock } = createDocxModuleMock({
+                TextRun: docx.TextRun,
+                Paragraph: docx.Paragraph,
+                Table: docx.Table,
+                TableRow: docx.TableRow,
+                TableCell: docx.TableCell,
+            });
+
+            const sections = [
+                {
+                    children: [
+                        new docxMock.Paragraph({
+                            text: "First line",
+                        }),
+                    ],
+                },
+            ];
+            const plugin = uut.addFrontMatterPlugin(
+                "Story Title",
+                "About 700 words",
+                "Authorr",
+                "Author\nemail@gmail.com",
+                docxMock as unknown as typeof docx
+            );
+            if (plugin.postprocess === undefined)
+                throw new Error("Missing postprocess() method");
+
+            plugin.postprocess(sections);
+            plugin.postprocess(sections);
+            const result = sections[0].children as any[];
+
+            expect(result.length).to.equal(15); // ends with title, author, blank para, first line para
         });
     });
 });

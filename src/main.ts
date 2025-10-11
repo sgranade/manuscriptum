@@ -369,8 +369,8 @@ export default class ManuscriptumPlugin extends Plugin {
                 }),
             },
             plugins: [
-                shunnThematicBreakPlugin(),
                 doubleSpaceAndIndentParas(),
+                shunnThematicBreakPlugin(true),
                 addFrontMatterPlugin(
                     metadata.title,
                     wordcountDesc,

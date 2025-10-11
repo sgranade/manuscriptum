@@ -93,6 +93,15 @@ export const addFrontMatterPlugin: (
         postprocess: (sections) => {
             if (sections.length === 0) return;
 
+            // This guard against double-adding is necessary because
+            // mdast2docx can call postprocess() multiple times on
+            // the same list of sections, which can add the front
+            // matter more than once. We'll guard by looking for our
+            // exact blank paragraph object in the second child.
+            if (sections[0].children[1] === blankPara) {
+                return;
+            }
+
             const contactInfoElems =
                 contactInfo !== undefined
                     ? contactInfo
