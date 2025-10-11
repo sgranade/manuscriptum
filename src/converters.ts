@@ -1,7 +1,5 @@
-import * as fs from "node:fs";
-
 import { Root } from "mdast";
-import { FrontMatterCache, normalizePath } from "obsidian";
+import { FrontMatterCache } from "obsidian";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
@@ -67,13 +65,11 @@ export interface NoteInformation {
  *
  * @param notesInfo Info about Obsidian notes.
  * @param metadata Manuscript metadata.
- * @param existsSync Function that returns true if a path exists, false otherwise.
  * @returns Tuple of Markdown AST corresponding to the notes and array of notices to show to the user (if any).
  */
 export function obsidianNotesToAST(
     notesInfo: NoteInformation[],
-    metadata: ManuscriptMetadata,
-    existsSync: typeof fs.existsSync = fs.existsSync
+    metadata: ManuscriptMetadata
 ): [Root | undefined, string[]] {
     const pipeline = unified()
         .use(remarkParse)
@@ -99,7 +95,7 @@ export function obsidianNotesToAST(
                 "contact",
                 // Set only string properties in this!
             ] as Array<keyof ManuscriptMetadata>) {
-                let val = info.frontmatter![k] as string;
+                const val = info.frontmatter![k] as string;
                 if (val !== undefined) {
                     // Don't allow blank metadata
                     if (val.trim() === "") {
@@ -113,17 +109,7 @@ export function obsidianNotesToAST(
                     if (metadata[k] !== origMetadata[k]) {
                         redefinedProps.push(k);
                     }
-                    // Normalize outputDir
-                    if (k === "outdir") val = normalizePath(val);
-                    // Do an existence check for outputDir
-                    if (k === "outdir" && !existsSync(val)) {
-                        notices.push(
-                            `outdir property on note ${info.name} has a non-existent directory: ` +
-                                `${val}. Using previous output directory: ${metadata.outdir}`
-                        );
-                    } else {
-                        (metadata[k] as string) = val; // Trust that we're only setting string properties
-                    }
+                    (metadata[k] as string) = val; // Trust that we're only setting string properties
                 }
             }
 

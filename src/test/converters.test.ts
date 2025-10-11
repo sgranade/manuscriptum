@@ -47,11 +47,7 @@ describe("Converters", () => {
                 },
             ];
 
-            const [result, _] = uut.obsidianNotesToAST(
-                info,
-                metadata,
-                () => true
-            );
+            const [result, _] = uut.obsidianNotesToAST(info, metadata);
 
             expect(result?.children[0].type).to.equal("paragraph");
             expect(
@@ -78,11 +74,7 @@ describe("Converters", () => {
                 },
             ];
 
-            const [_, result] = uut.obsidianNotesToAST(
-                info,
-                metadata,
-                () => true
-            );
+            const [_, result] = uut.obsidianNotesToAST(info, metadata);
 
             expect(metadata).to.eql({
                 title: "Story Title",
@@ -114,11 +106,7 @@ describe("Converters", () => {
                 },
             ];
 
-            const [_, result] = uut.obsidianNotesToAST(
-                info,
-                metadata,
-                () => true
-            );
+            const [_, result] = uut.obsidianNotesToAST(info, metadata);
 
             expect(metadata).to.eql({
                 title: "new title",
@@ -130,60 +118,6 @@ describe("Converters", () => {
                 wordcount: 4,
             });
             expect(result).to.be.empty;
-        });
-
-        it("should ignore an outdir property that doesn't exist as a directory", async () => {
-            const metadata = {
-                title: "Story Title",
-                filename: "storytitle.docx",
-                outdir: "~/stories",
-            };
-            const info = [
-                {
-                    name: "notey",
-                    content: "This is our story",
-                    frontmatter: {
-                        outdir: "~/temp",
-                    },
-                },
-            ];
-
-            uut.obsidianNotesToAST(info, metadata, (p) =>
-                p === "~/temp" ? false : true
-            );
-
-            expect(metadata).to.eql({
-                title: "Story Title",
-                filename: "storytitle.docx",
-                outdir: "~/stories",
-                wordcount: 4,
-            });
-        });
-
-        it("should notify if an outdir property doesn't exist as a directory", async () => {
-            const metadata = {
-                title: "Story Title",
-                filename: "storytitle.docx",
-                outdir: "~/stories",
-            };
-            const info = [
-                {
-                    name: "notey",
-                    content: "This is our story",
-                    frontmatter: {
-                        outdir: "~/temp",
-                    },
-                },
-            ];
-
-            const [_, result] = uut.obsidianNotesToAST(info, metadata, (p) =>
-                p === "~/temp" ? false : true
-            );
-
-            expect(result).to.eql([
-                "outdir property on note notey has a non-existent directory: " +
-                    "~/temp. Using previous output directory: ~/stories",
-            ]);
         });
 
         it("should overwrite metadata from earlier notes with metadata from later notes", async () => {
@@ -209,7 +143,7 @@ describe("Converters", () => {
                 },
             ];
 
-            uut.obsidianNotesToAST(info, metadata, () => true);
+            uut.obsidianNotesToAST(info, metadata);
 
             expect(metadata).to.eql({
                 title: "Title 2",
@@ -244,11 +178,7 @@ describe("Converters", () => {
                 },
             ];
 
-            const [_, result] = uut.obsidianNotesToAST(
-                info,
-                metadata,
-                () => true
-            );
+            const [_, result] = uut.obsidianNotesToAST(info, metadata);
 
             expect(result).to.eql([
                 "Note notey 1 re-defined the following properties: title, contact",
@@ -272,7 +202,7 @@ describe("Converters", () => {
                 },
             ];
 
-            uut.obsidianNotesToAST(info, metadata, () => true);
+            uut.obsidianNotesToAST(info, metadata);
 
             expect(metadata.wordcount).to.equal(7);
         });

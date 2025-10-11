@@ -196,7 +196,7 @@ export default class ManuscriptumPlugin extends Plugin {
         const metadata: ManuscriptMetadata = {
             title: folder.name,
             filename: folderNameToDocxOutfileName(folder.name),
-            outdir: normalizePath(this.settings.outputDir.trim()),
+            outdir: this.settings.outputDir.trim(),
             author: this.settings.authorName.trim(),
             surname: this.settings.authorSurname.trim(),
             contact: this.settings.authorContactInformation.trim(),
@@ -234,7 +234,10 @@ export default class ManuscriptumPlugin extends Plugin {
             }
         }
 
-        // Now that metadata is fully filled in, check whether we need blank settings filled in.
+        // Now that metadata is fully filled in, normalize the outdir
+        metadata.outdir = normalizePath(metadata.outdir);
+
+        // Check whether we need blank settings filled in.
         // Note that blank metadata can only come from settings, as blank
         // metadata in note frontmatter is skipped by `obsidianNotesToAST()`.
         const missingSettings: string[] = [];
