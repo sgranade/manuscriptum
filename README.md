@@ -14,6 +14,14 @@ Features:
 
 Each of your stories must be in its own folder. The story's title is the name of the folder. You can write your stories either in a single note or in a collection of notes. Multiple notes will be treated as individual scenes and combined with a scene break (`#`) between each one. To add scene breaks to an individual note, use the Markdown format for horizontal lines (`---`).
 
+One way to keep your notes in order is to number each scene note:
+
+```
+01 - At the Surface
+02 - Into the Tunnel
+03 - The First Encounter
+```
+
 > [!WARNING]
 > Manuscriptum tries to sort the notes in the same order as they show up in your file explorer, but it will fail if you use a plugin that lets you manually change that sort order like [Custom File Explorer sorting](https://github.com/SebastianMC/obsidian-custom-sort).
 

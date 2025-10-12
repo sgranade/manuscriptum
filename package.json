@@ -1,6 +1,6 @@
 {
     "name": "manuscriptum",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "Obsidian plugin to create .docx files that contain story and novel manuscripts for submission to magazines or agents.",
     "license": "MIT",
     "author": {
@@ -10,7 +10,7 @@
     },
     "main": "out/main.js",
     "scripts": {
-        "compile": "npm-run-all check-types esbuild",
+        "build": "npm-run-all check-types esbuild",
         "check-types": "tsc -b --noEmit",
         "esbuild": "node esbuild.config.mjs",
         "watch": "node esbuild.config.mjs --watch",
@@ -29,7 +29,7 @@
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.3.0",
         "chai": "^6.0.1",
-        "esbuild": "0.25.9",
+        "esbuild": "^0.25.10",
         "eslint": "^9.34.0",
         "mocha": "^11.7.1",
         "npm-run-all": "^4.1.5",
@@ -37,7 +37,7 @@
         "prettier": "^3.6.2",
         "ts-mockito": "^2.6.1",
         "tsx": "^4.20.5",
-        "type-fest": "^4.41.0",
+        "type-fest": "^5.0.1",
         "typescript": "^5.9.2",
         "typescript-eslint": "^8.40.0"
     },

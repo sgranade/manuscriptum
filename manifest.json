@@ -2,7 +2,7 @@
     "id": "manuscriptum",
     "name": "Manuscriptum",
     "version": "x.x.x",
-    "minAppVersion": "1.5.7",
+    "minAppVersion": "1.5.8",
     "description": "Obsidian plugin to create .docx files that contain story and novel manuscripts for submission to magazines or agents.",
     "author": "Stephen Granade",
     "authorUrl": "https://github.com/sgranade",
