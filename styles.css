@@ -1,0 +1,3 @@
+input.manuscriptum_errored_entry, input.manuscriptum_errored_entry:focus, textarea.manuscriptum_errored_entry, textarea.manuscriptum_errored_entry:focus {
+    border: 2px solid var(--text-error);
+}

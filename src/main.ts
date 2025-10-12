@@ -260,7 +260,7 @@ export default class ManuscriptumPlugin extends Plugin {
         const outdirExists = fs.existsSync(metadata.outdir);
         if (!outdirExists) {
             if (outdirFromSettings) {
-            missingSettings.push(SettingTitles.OutputDir);
+                missingSettings.push(SettingTitles.OutputDir);
             } else {
                 new Notice(
                     `Output directory defined in frontmatter doesn't exist: ${metadata.outdir}`
@@ -279,7 +279,7 @@ export default class ManuscriptumPlugin extends Plugin {
                         `#${createSettingId(this, settingName)}`
                     ) as HTMLElement;
                     if (settingEl) {
-                        settingEl.style.border = "2px solid red";
+                        settingEl.addClass("manuscriptum_errored_entry");
                     }
                 }
             });
@@ -473,16 +473,17 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                         // Warn the user if left empty
                         if (value.trim().length > 0) {
-                            text.inputEl.style.border = "";
+                            text.inputEl.removeClass(
+                                "manuscriptum_errored_entry"
+                            );
                         } else {
-                            text.inputEl.style.border = "2px solid red";
+                            text.inputEl.addClass("manuscriptum_errored_entry");
                         }
                     });
                 el.setAttribute(
                     "id",
                     createSettingId(this.plugin, SettingTitles.AuthorName)
                 );
-                el.style.transition = "border-color 0.3s ease-in-out";
             });
         new Setting(containerEl)
             .setName(SettingTitles.AuthorSurname)
@@ -496,16 +497,17 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                         // Warn the user if left empty
                         if (value.trim().length > 0) {
-                            text.inputEl.style.border = "";
+                            text.inputEl.removeClass(
+                                "manuscriptum_errored_entry"
+                            );
                         } else {
-                            text.inputEl.style.border = "2px solid red";
+                            text.inputEl.addClass("manuscriptum_errored_entry");
                         }
                     });
                 el.setAttribute(
                     "id",
                     createSettingId(this.plugin, SettingTitles.AuthorSurname)
                 );
-                el.style.transition = "border-color 0.3s ease-in-out";
             });
         new Setting(containerEl)
             .setName(SettingTitles.AuthorContactInformation)
@@ -521,9 +523,11 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                         // Warn the user if left empty
                         if (value.trim().length > 0) {
-                            text.inputEl.style.border = "";
+                            text.inputEl.removeClass(
+                                "manuscriptum_errored_entry"
+                            );
                         } else {
-                            text.inputEl.style.border = "2px solid red";
+                            text.inputEl.addClass("manuscriptum_errored_entry");
                         }
                     });
                 el.setAttribute(
@@ -533,7 +537,6 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                         SettingTitles.AuthorContactInformation
                     )
                 );
-                el.style.transition = "border-color 0.3s ease-in-out";
             });
         let outDirTextComponent: TextComponent | null = null;
         // Save the onChange() handler so we can call it programmatically.
@@ -542,9 +545,13 @@ class ManuscriptumSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
             if (outDirTextComponent !== null) {
                 if (fs.existsSync(value)) {
-                    outDirTextComponent.inputEl.style.border = "";
+                    outDirTextComponent.inputEl.removeClass(
+                        "manuscriptum_errored_entry"
+                    );
                 } else {
-                    outDirTextComponent.inputEl.style.border = "2px solid red";
+                    outDirTextComponent.inputEl.addClass(
+                        "manuscriptum_errored_entry"
+                    );
                 }
             }
         };
@@ -561,7 +568,6 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                     "id",
                     createSettingId(this.plugin, SettingTitles.OutputDir)
                 );
-                el.style.transition = "border-color 0.3s ease-in-out";
             });
         outDirSetting.addButton((button) => {
             button.setButtonText("Select Directory").onClick(async () => {

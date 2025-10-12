@@ -1,6 +1,6 @@
 import esbuild from "esbuild";
 import process from "process";
-import { readFileSync, writeFileSync } from "fs";
+import { copyFileSync, readFileSync, writeFileSync } from "fs";
 const pkg = JSON.parse(readFileSync("./package.json", "utf8"));
 
 const banner = `/*! ${pkg.name} v${pkg.version} | (c) ${pkg.author.name} | ${pkg.author.url} */`;
@@ -29,7 +29,8 @@ const esbuildProblemMatcherPlugin = {
 };
 
 /**
- * Copy `manifest.json` to outdir, updating its version to match what's in `package.json`.
+ * Copy `manifest.json` to outdir, updating its version to match what's in `package.json`,
+ * as well as styles.css.
  * @type {import('esbuild').Plugin}
  */
 const updateManifestPlugin = {
@@ -37,6 +38,8 @@ const updateManifestPlugin = {
 
     setup(build) {
         build.onEnd(() => {
+            copyFileSync("styles.css", outdir + "/styles.css");
+            console.log("✅ styles.css copied");
             const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
             manifest.version = pkg.version;
             writeFileSync(
