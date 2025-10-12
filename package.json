@@ -1,6 +1,6 @@
 {
     "name": "manuscriptum",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Obsidian plugin to create .docx files that contain story and novel manuscripts for submission to magazines or agents.",
     "license": "MIT",
     "author": {
