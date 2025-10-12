@@ -201,6 +201,7 @@ export default class ManuscriptumPlugin extends Plugin {
             surname: this.settings.authorSurname.trim(),
             contact: this.settings.authorContactInformation.trim(),
         };
+        const origOutdir = metadata.outdir; // To keep track
 
         const notes = sortChildrenInFileExplorerOrder(
             this.app.workspace,
@@ -234,6 +235,11 @@ export default class ManuscriptumPlugin extends Plugin {
             }
         }
 
+        // We need to know if our output dir changed, because if it
+        // doesn't exist, we need to indicate where the source of the
+        // error is (either settings or frontmatter)
+        const outdirFromSettings = metadata.outdir === origOutdir;
+
         // Now that metadata is fully filled in, normalize the outdir
         metadata.outdir = normalizePath(metadata.outdir);
 
@@ -249,11 +255,17 @@ export default class ManuscriptumPlugin extends Plugin {
             if (metadata.contact === "")
                 missingSettings.push(SettingTitles.AuthorContactInformation);
         }
-        // A non-existent directory can only come from settings,
-        // as `obsidianNotesToAST()` rejects non-existent output
-        // directories that are defined in notes' frontmatter.
-        if (!fs.existsSync(metadata.outdir)) {
+        // A non-existent directory can come either from settings
+        // or from front matter. Handle both cases.
+        const outdirExists = fs.existsSync(metadata.outdir);
+        if (!outdirExists) {
+            if (outdirFromSettings) {
             missingSettings.push(SettingTitles.OutputDir);
+            } else {
+                new Notice(
+                    `Output directory defined in frontmatter doesn't exist: ${metadata.outdir}`
+                );
+            }
         }
         if (missingSettings.length > 0) {
             new Notice(
@@ -271,6 +283,8 @@ export default class ManuscriptumPlugin extends Plugin {
                     }
                 }
             });
+        }
+        if (!outdirExists || missingSettings.length > 0) {
             return;
         }
 
