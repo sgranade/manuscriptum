@@ -170,13 +170,13 @@ export default class ManuscriptumPlugin extends Plugin {
     addManuscriptumCommands() {
         this.addCommand({
             id: "save-as-manuscript",
-            name: "Save as manuscript (Shunn Modern)",
+            name: "Save as manuscript (Shunn modern)",
             checkCallback: (checking: boolean) =>
                 this.commandCheckCallback(checking, false),
         });
         this.addCommand({
             id: "save-as-anon-manuscript",
-            name: "Save as anonymous manuscript (Shunn Modern)",
+            name: "Save as anonymous manuscript (Shunn modern)",
             checkCallback: (checking: boolean) =>
                 this.commandCheckCallback(checking, true),
         });
@@ -186,7 +186,7 @@ export default class ManuscriptumPlugin extends Plugin {
      * Open the plugin's settings tab in the settings pane.
      */
     openSettingsTab() {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- App object doesn't directly expose the setting property
         const setting = (this.app as any).setting;
         setting.open();
         setting.openTabById(this.manifest.id);
@@ -555,7 +555,7 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                 }
             }
         };
-        const outDirSetting = new Setting(containerEl)
+        new Setting(containerEl)
             .setName(SettingTitles.OutputDir)
             .setDesc("Where to put the .docx files")
             .addText((text) => {
@@ -569,24 +569,10 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                     createSettingId(this.plugin, SettingTitles.OutputDir)
                 );
             });
-        outDirSetting.addButton((button) => {
-            button.setButtonText("Select Directory").onClick(async () => {
-                const input = document.createElement("input");
-                input.type = "file";
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (input as any).webkitdirectory = true; // So we pick directories only
-                input.onchange = async () => {
-                    if (input.files && input.files.length > 0) {
-                        const file = input.files[0] as File & { path: string };
-                        const dir = path.dirname(file.path);
-                        if (outDirTextComponent !== null) {
-                            outDirTextComponent.setValue(dir);
-                            outDirTextComponentOnChange(dir);
-                        }
-                    }
-                };
-                input.click();
-            });
-        });
+        // TODO if and when Obsidian makes a directory picker available,
+        // look at adding one that can be opened using a "Select directory"
+        // button. As of 2025 12 22, the only way to do it is to create a
+        // webkitdirectory input, which causes hella UI freezes. See commit
+        // `0b5f782` for a previous example
     }
 }

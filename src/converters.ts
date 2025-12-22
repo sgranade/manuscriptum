@@ -70,7 +70,7 @@ export interface NoteInformation {
 export function obsidianNotesToAST(
     notesInfo: NoteInformation[],
     metadata: ManuscriptMetadata
-): [Root | undefined, string[]] {
+): [Root, string[]] {
     const pipeline = unified()
         .use(remarkParse)
         .use(remarkGfm)
@@ -80,7 +80,7 @@ export function obsidianNotesToAST(
     const origMetadata = { ...metadata };
     metadata.wordcount = 0;
 
-    let tree;
+    let tree: Root = { type: "root", children: [] };
     for (const info of notesInfo) {
         // Check if the note has properties that overwrite the existing settings
         if (info.frontmatter !== null && info.frontmatter !== undefined) {
@@ -125,8 +125,7 @@ export function obsidianNotesToAST(
 
         // Count words by visiting every text node
         let count = 0;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        visit(subTree, "text", (node: any) => {
+        visit(subTree, "text", (node) => {
             const words = node.value.trim().split(/\s+/).filter(Boolean);
             count += words.length;
         });
@@ -135,7 +134,7 @@ export function obsidianNotesToAST(
         subTree.children = subTree.children.filter(
             (node) => node.type !== "yaml"
         );
-        if (tree === undefined) {
+        if (tree.children.length === 0) {
             tree = subTree;
         } else {
             tree.children.push({ type: "thematicBreak" }, ...subTree.children);

@@ -49,8 +49,8 @@ function getFileExplorerSortSettings(workspace: Workspace): SortInfo {
         errorMessage: undefined,
     };
     const leaf = workspace.getLeavesOfType("file-explorer")?.[0];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const view = leaf?.view as any; // There's no public type for the file-explorer type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- There's no public type for the file-explorer type, so we cast to any as a stop-gap
+    const view = leaf?.view as any;
     if (!view) {
         sortInfo.errorMessage =
             "Couldn't determine notes' sort order: File Explorer View not found";
