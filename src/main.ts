@@ -102,7 +102,10 @@ export default class ManuscriptumPlugin extends Plugin {
         }
 
         if (node instanceof TFolder) {
-            this.saveAsManuscript(node, anonymize);
+            this.saveAsManuscript(node, anonymize).catch(
+                (reason) =>
+                    new Notice(`Failed to save the manuscript: ${reason}`)
+            );
         } else {
             console.error("Unexpected type of folder:", node);
         }
@@ -151,7 +154,15 @@ export default class ManuscriptumPlugin extends Plugin {
         if (markdownView && markdownView.file !== null) {
             if (!checking) {
                 if (markdownView.file.parent instanceof TFolder) {
-                    this.saveAsManuscript(markdownView.file.parent, anonymize);
+                    this.saveAsManuscript(
+                        markdownView.file.parent,
+                        anonymize
+                    ).catch(
+                        (reason) =>
+                            new Notice(
+                                `Failed to save the manuscript: ${reason}`
+                            )
+                    );
                 } else {
                     console.error(
                         "Note didn't have a folder:",
