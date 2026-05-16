@@ -8,7 +8,7 @@
         "email": "stephen@granades.com",
         "url": "https://github.com/sgranade"
     },
-    "main": "out/main.js",
+    "main": "dist/main.js",
     "scripts": {
         "build": "npm-run-all check-types esbuild",
         "check-types": "tsc -b --noEmit",
