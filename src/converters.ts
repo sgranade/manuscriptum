@@ -69,7 +69,7 @@ export interface NoteInformation {
  */
 export function obsidianNotesToAST(
     notesInfo: NoteInformation[],
-    metadata: ManuscriptMetadata
+    metadata: ManuscriptMetadata,
 ): [Root, string[]] {
     const pipeline = unified()
         .use(remarkParse)
@@ -95,12 +95,12 @@ export function obsidianNotesToAST(
                 "contact",
                 // Set only string properties in this!
             ] as Array<keyof ManuscriptMetadata>) {
-                const val = info.frontmatter![k] as string;
+                const val = info.frontmatter![k];
                 if (val !== undefined) {
                     // Don't allow blank metadata
                     if (val.trim() === "") {
                         notices.push(
-                            `${k} property on note ${info.name} is blank. Ignoring.`
+                            `${k} property on note ${info.name} is blank. Ignoring.`,
                         );
                         continue;
                     }
@@ -115,7 +115,7 @@ export function obsidianNotesToAST(
 
             if (redefinedProps.length !== 0) {
                 notices.push(
-                    `Note ${info.name} re-defined the following properties: ${redefinedProps.join(", ")}`
+                    `Note ${info.name} re-defined the following properties: ${redefinedProps.join(", ")}`,
                 );
             }
         }
@@ -132,7 +132,7 @@ export function obsidianNotesToAST(
         metadata.wordcount += count;
 
         subTree.children = subTree.children.filter(
-            (node) => node.type !== "yaml"
+            (node) => node.type !== "yaml",
         );
         if (tree.children.length === 0) {
             tree = subTree;

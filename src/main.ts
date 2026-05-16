@@ -297,7 +297,7 @@ export default class ManuscriptumPlugin extends Plugin {
             // Wait for a paint cycle
             requestAnimationFrame(() => {
                 for (const settingName of missingSettings) {
-                    const settingEl = document.querySelector(
+                    const settingEl = activeDocument.querySelector(
                         `#${createSettingId(this, settingName)}`,
                     ) as HTMLElement;
                     if (settingEl) {

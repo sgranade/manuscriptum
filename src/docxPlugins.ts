@@ -8,7 +8,7 @@ import { IPlugin } from "mdast2docx";
  * By default mdast2docx turns thematic breaks into a full horizontal rule.
  */
 export const shunnThematicBreakPlugin: (doubleSpace: boolean) => IPlugin = (
-    doubleSpace
+    doubleSpace,
 ) => {
     // Code based on https://github.com/md2docx/table/
     const spacing = doubleSpace
@@ -36,7 +36,7 @@ export const shunnThematicBreakPlugin: (doubleSpace: boolean) => IPlugin = (
  */
 export const doubleSpaceAndIndentParas: () => IPlugin = () => {
     return {
-        block(docx, node, paraProps) {
+        block(_docx, node, paraProps) {
             if (node.type === "paragraph") {
                 paraProps.indent = {
                     firstLine: 720,
@@ -67,7 +67,7 @@ export const addFrontMatterPlugin: (
     wordCountDesc: string,
     author?: string,
     contactInfo?: string,
-    docx?: typeof DOCX
+    docx?: typeof DOCX,
 ) => IPlugin = (title, wordCountDesc, author, contactInfo, docx) => {
     if (docx === undefined) {
         docx = DOCX;
@@ -109,7 +109,7 @@ export const addFrontMatterPlugin: (
                           .map((t, ndx) =>
                               ndx === 0
                                   ? new docx.TextRun(t)
-                                  : new docx.TextRun({ text: t, break: 1 })
+                                  : new docx.TextRun({ text: t, break: 1 }),
                           )
                     : undefined;
             const titleAndAuthor = [
@@ -125,7 +125,7 @@ export const addFrontMatterPlugin: (
                         text: `by ${author}`,
                         alignment: "center",
                         spacing: doubleSpaced,
-                    })
+                    }),
                 );
             }
 
