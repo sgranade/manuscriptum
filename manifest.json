@@ -1,7 +1,7 @@
 {
     "id": "manuscriptum",
     "name": "Manuscriptum",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "minAppVersion": "1.8.7",
     "description": "Create .docx files that contain story and novel manuscripts for submission to magazines or agents.",
     "author": "Stephen Granade",
