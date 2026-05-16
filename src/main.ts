@@ -82,7 +82,7 @@ export default class ManuscriptumPlugin extends Plugin {
         this.settings = Object.assign(
             {},
             DEFAULT_SETTINGS,
-            await this.loadData()
+            await this.loadData(),
         );
     }
 
@@ -104,7 +104,7 @@ export default class ManuscriptumPlugin extends Plugin {
         if (node instanceof TFolder) {
             this.saveAsManuscript(node, anonymize).catch(
                 (reason) =>
-                    new Notice(`Failed to save the manuscript: ${reason}`)
+                    new Notice(`Failed to save the manuscript: ${reason}`),
             );
         } else {
             console.error("Unexpected type of folder:", node);
@@ -128,13 +128,13 @@ export default class ManuscriptumPlugin extends Plugin {
                     });
                     menu.addItem((item) => {
                         item.setTitle(
-                            "Save as anonymous manuscript (Shunn modern)"
+                            "Save as anonymous manuscript (Shunn modern)",
                         )
                             .setIcon("book-text") // Lucide icon name
                             .onClick(() => this.onContextClick(file, true));
                     });
                 }
-            })
+            }),
         );
     }
 
@@ -146,7 +146,7 @@ export default class ManuscriptumPlugin extends Plugin {
      */
     commandCheckCallback(
         checking: boolean,
-        anonymize: boolean
+        anonymize: boolean,
     ): boolean | void {
         // Only available in a Markdown view
         const markdownView =
@@ -156,17 +156,17 @@ export default class ManuscriptumPlugin extends Plugin {
                 if (markdownView.file.parent instanceof TFolder) {
                     this.saveAsManuscript(
                         markdownView.file.parent,
-                        anonymize
+                        anonymize,
                     ).catch(
                         (reason) =>
                             new Notice(
-                                `Failed to save the manuscript: ${reason}`
-                            )
+                                `Failed to save the manuscript: ${reason}`,
+                            ),
                     );
                 } else {
                     console.error(
                         "Note didn't have a folder:",
-                        markdownView.file
+                        markdownView.file,
                     );
                 }
             }
@@ -197,8 +197,16 @@ export default class ManuscriptumPlugin extends Plugin {
      * Open the plugin's settings tab in the settings pane.
      */
     openSettingsTab() {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- App object doesn't directly expose the setting property
-        const setting = (this.app as any).setting;
+        const setting =
+            // Doing this cast since the App object doesn't expose its setting property
+            (
+                this.app as unknown as {
+                    setting: {
+                        open(): void;
+                        openTabById(id: string): void;
+                    };
+                }
+            ).setting;
         setting.open();
         setting.openTabById(this.manifest.id);
     }
@@ -216,7 +224,7 @@ export default class ManuscriptumPlugin extends Plugin {
 
         const notes = sortChildrenInFileExplorerOrder(
             this.app.workspace,
-            folder.children
+            folder.children,
         ).filter((f) => f instanceof TFile && f.extension === "md") as TFile[];
         // TODO handle too-large number of notes (is the user sure? maybe make that a setting)
 
@@ -228,14 +236,14 @@ export default class ManuscriptumPlugin extends Plugin {
                     frontmatter:
                         this.app.metadataCache.getFileCache(n)?.frontmatter,
                 };
-            })
+            }),
         );
 
         const [tree, notices] = obsidianNotesToAST(notesInfo, metadata);
 
         if (tree === undefined) {
             new Notice(
-                `Couldn't find Markdown in ${folder.name} to save as a manuscript`
+                `Couldn't find Markdown in ${folder.name} to save as a manuscript`,
             );
             return;
         }
@@ -274,20 +282,20 @@ export default class ManuscriptumPlugin extends Plugin {
                 missingSettings.push(SettingTitles.OutputDir);
             } else {
                 new Notice(
-                    `Output directory defined in frontmatter doesn't exist: ${metadata.outdir}`
+                    `Output directory defined in frontmatter doesn't exist: ${metadata.outdir}`,
                 );
             }
         }
         if (missingSettings.length > 0) {
             new Notice(
-                `Please configure Manuscriptum settings: ${missingSettings.join(", ")}.`
+                `Please configure Manuscriptum settings: ${missingSettings.join(", ")}.`,
             );
             this.openSettingsTab();
             // Wait for a paint cycle
             requestAnimationFrame(() => {
                 for (const settingName of missingSettings) {
                     const settingEl = document.querySelector(
-                        `#${createSettingId(this, settingName)}`
+                        `#${createSettingId(this, settingName)}`,
                     ) as HTMLElement;
                     if (settingEl) {
                         settingEl.addClass("manuscriptum_errored_entry");
@@ -321,7 +329,7 @@ export default class ManuscriptumPlugin extends Plugin {
                     this.writeDocxFile(outFullPath, docxArrayBuffer);
                 },
                 "Overwrite",
-                "Cancel"
+                "Cancel",
             ).open();
         } else {
             this.writeDocxFile(outFullPath, docxArrayBuffer);
@@ -400,7 +408,7 @@ export default class ManuscriptumPlugin extends Plugin {
                     metadata.title,
                     wordcountDesc,
                     metadata.author,
-                    metadata.contact
+                    metadata.contact,
                 ),
             ],
         };
@@ -409,7 +417,7 @@ export default class ManuscriptumPlugin extends Plugin {
             tree,
             docProps,
             sectionProps,
-            "arraybuffer"
+            "arraybuffer",
         )) as ArrayBuffer;
         return docxArrayBuffer;
     }
@@ -485,7 +493,7 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                         // Warn the user if left empty
                         if (value.trim().length > 0) {
                             text.inputEl.removeClass(
-                                "manuscriptum_errored_entry"
+                                "manuscriptum_errored_entry",
                             );
                         } else {
                             text.inputEl.addClass("manuscriptum_errored_entry");
@@ -493,7 +501,7 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                     });
                 el.setAttribute(
                     "id",
-                    createSettingId(this.plugin, SettingTitles.AuthorName)
+                    createSettingId(this.plugin, SettingTitles.AuthorName),
                 );
             });
         new Setting(containerEl)
@@ -509,7 +517,7 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                         // Warn the user if left empty
                         if (value.trim().length > 0) {
                             text.inputEl.removeClass(
-                                "manuscriptum_errored_entry"
+                                "manuscriptum_errored_entry",
                             );
                         } else {
                             text.inputEl.addClass("manuscriptum_errored_entry");
@@ -517,7 +525,7 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                     });
                 el.setAttribute(
                     "id",
-                    createSettingId(this.plugin, SettingTitles.AuthorSurname)
+                    createSettingId(this.plugin, SettingTitles.AuthorSurname),
                 );
             });
         new Setting(containerEl)
@@ -526,7 +534,7 @@ class ManuscriptumSettingTab extends PluginSettingTab {
             .addTextArea((text) => {
                 const el = text.inputEl;
                 text.setPlaceholder(
-                    "Example: Jae Simons\njaesimons@actualemail.com"
+                    "Example: Jae Simons\njaesimons@actualemail.com",
                 )
                     .setValue(this.plugin.settings.authorContactInformation)
                     .onChange(async (value) => {
@@ -535,7 +543,7 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                         // Warn the user if left empty
                         if (value.trim().length > 0) {
                             text.inputEl.removeClass(
-                                "manuscriptum_errored_entry"
+                                "manuscriptum_errored_entry",
                             );
                         } else {
                             text.inputEl.addClass("manuscriptum_errored_entry");
@@ -545,8 +553,8 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                     "id",
                     createSettingId(
                         this.plugin,
-                        SettingTitles.AuthorContactInformation
-                    )
+                        SettingTitles.AuthorContactInformation,
+                    ),
                 );
             });
         let outDirTextComponent: TextComponent | null = null;
@@ -557,11 +565,11 @@ class ManuscriptumSettingTab extends PluginSettingTab {
             if (outDirTextComponent !== null) {
                 if (fs.existsSync(value)) {
                     outDirTextComponent.inputEl.removeClass(
-                        "manuscriptum_errored_entry"
+                        "manuscriptum_errored_entry",
                     );
                 } else {
                     outDirTextComponent.inputEl.addClass(
-                        "manuscriptum_errored_entry"
+                        "manuscriptum_errored_entry",
                     );
                 }
             }
@@ -577,7 +585,7 @@ class ManuscriptumSettingTab extends PluginSettingTab {
                     .onChange(outDirTextComponentOnChange);
                 el.setAttribute(
                     "id",
-                    createSettingId(this.plugin, SettingTitles.OutputDir)
+                    createSettingId(this.plugin, SettingTitles.OutputDir),
                 );
             });
         // TODO if and when Obsidian makes a directory picker available,

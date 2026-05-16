@@ -19,6 +19,28 @@ const SortOrder = {
 type SortOrderType = (typeof SortOrder)[keyof typeof SortOrder];
 
 /**
+ * Interface for Obsidian views that have a sort order
+ */
+interface FileExplorerView {
+    sortOrder: string;
+}
+
+/**
+ * Determine if an Obsidian view has a sortOrder.
+ *
+ * @param view Obsidian view
+ * @returns whether the view matches the FileExplorerView interface and has a sortOrder.
+ */
+function hasSortOrder(view: unknown): view is FileExplorerView {
+    return (
+        typeof view === "object" &&
+        view !== null &&
+        "sortOrder" in view &&
+        typeof (view as { sortOrder: unknown }).sortOrder === "string"
+    );
+}
+
+/**
  * Order in which the files and folders are to be sorted.
  */
 interface SortInfo {
@@ -49,16 +71,15 @@ function getFileExplorerSortSettings(workspace: Workspace): SortInfo {
         errorMessage: undefined,
     };
     const leaf = workspace.getLeavesOfType("file-explorer")?.[0];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- There's no public type for the file-explorer type, so we cast to any as a stop-gap
-    const view = leaf?.view as any;
+    const view = leaf?.view;
     if (!view) {
         sortInfo.errorMessage =
             "Couldn't determine notes' sort order: File Explorer View not found";
-    } else if (!view.sortOrder) {
+    } else if (!hasSortOrder(view)) {
         sortInfo.errorMessage =
             "Couldn't determine notes' sort order: that information isn't in the File Explorer View as expected";
     } else {
-        let order = view.sortOrder as string;
+        let order = view.sortOrder;
         const reverse = order.endsWith("Reverse");
         if (reverse) {
             order = order.slice(0, -7);
@@ -91,7 +112,7 @@ function getFileExplorerSortSettings(workspace: Workspace): SortInfo {
  */
 export function sortChildrenInFileExplorerOrder(
     workspace: Workspace,
-    children: TAbstractFile[]
+    children: TAbstractFile[],
 ): TAbstractFile[] {
     const { order, smallToLarge } = getFileExplorerSortSettings(workspace);
 
