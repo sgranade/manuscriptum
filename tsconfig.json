@@ -9,7 +9,7 @@
         "importHelpers": true,
         "isolatedModules": true,
         "strictNullChecks": true,
-        "allowSyntheticDefaultImports": true, // Needed for jszip as of 3.10.1
+        // "allowSyntheticDefaultImports": true, // Was needed for jszip as of 3.10.1
         "lib": [
             "DOM",
             "es2020",
