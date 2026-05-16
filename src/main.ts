@@ -39,7 +39,10 @@ interface ManuscriptumSettings {
     outputDir: string;
 }
 
-const DEFAULT_SETTINGS: Partial<ManuscriptumSettings> = {
+const DEFAULT_SETTINGS: ManuscriptumSettings = {
+    authorName: "",
+    authorSurname: "",
+    authorContactInformation: "",
     outputDir: downloadsFolder(),
 };
 
@@ -64,7 +67,7 @@ function createSettingId(plugin: Plugin, settingTitle: string): string {
 }
 
 export default class ManuscriptumPlugin extends Plugin {
-    settings: ManuscriptumSettings;
+    settings = DEFAULT_SETTINGS;
 
     async onload() {
         await this.loadSettings();
