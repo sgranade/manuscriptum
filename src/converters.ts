@@ -95,8 +95,8 @@ export function obsidianNotesToAST(
                 "contact",
                 // Set only string properties in this!
             ] as Array<keyof ManuscriptMetadata>) {
-                const val = info.frontmatter![k];
-                if (val !== undefined) {
+                const val: unknown = info.frontmatter[k];
+                if (val !== undefined && typeof val === "string") {
                     // Don't allow blank metadata
                     if (val.trim() === "") {
                         notices.push(

@@ -36,7 +36,7 @@ function hasSortOrder(view: unknown): view is FileExplorerView {
         typeof view === "object" &&
         view !== null &&
         "sortOrder" in view &&
-        typeof (view as { sortOrder: unknown }).sortOrder === "string"
+        typeof view.sortOrder === "string"
     );
 }
 

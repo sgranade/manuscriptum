@@ -1,1 +1,1 @@
-{"root":["./src/converters.ts","./src/docxplugins.ts","./src/downloadsfolder.ts","./src/main.ts","./src/obsidiancomponents.ts","./src/obsidianutilities.ts","./src/utilities.ts","./src/types/shims-electron.d.ts"],"errors":true,"version":"6.0.3"}
+{"root":["./src/converters.ts","./src/docxplugins.ts","./src/downloadsfolder.ts","./src/main.ts","./src/obsidiancomponents.ts","./src/obsidianutilities.ts","./src/utilities.ts","./src/types/shims-electron.d.ts","./src/types/shims-style-mod.d.ts"],"version":"6.0.3"}

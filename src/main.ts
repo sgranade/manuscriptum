@@ -82,11 +82,13 @@ export default class ManuscriptumPlugin extends Plugin {
     onunload() {}
 
     async loadSettings() {
-        this.settings = Object.assign(
-            {},
-            DEFAULT_SETTINGS,
-            await this.loadData(),
-        );
+        const loadedSettings: unknown = await this.loadData();
+        if (typeof loadedSettings === "object" && loadedSettings !== null) {
+            this.settings = {
+                ...DEFAULT_SETTINGS,
+                ...(loadedSettings as Partial<ManuscriptumSettings>),
+            };
+        }
     }
 
     async saveSettings() {
@@ -464,7 +466,9 @@ export default class ManuscriptumPlugin extends Plugin {
             });
             notice.messageEl.appendChild(messageEl);
         } catch (e) {
-            new Notice(`Failed to write manuscript: ${e}`);
+            new Notice(
+                `Failed to write manuscript: ${e instanceof Error ? e.message : String(e)}`,
+            );
         }
     }
 }
